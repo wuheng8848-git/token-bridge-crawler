@@ -1,0 +1,127 @@
+# Token Bridge Crawler 配置文件
+# 厂商刊例价抓取服务
+
+# 调度配置
+scheduler:
+  # 默认每日凌晨 2:00 执行
+  cron: "0 2 * * *"
+  
+  # 限流降级策略
+  rate_limit:
+    # 触发限流后的重试间隔（天）
+    backoff_days: [2, 4, 7]  # 第1次失败2天后，第2次4天，之后每周
+    
+    # 厂商间请求间隔（秒）
+    vendor_interval: 10
+
+# 抓取厂商配置
+vendors:
+  google:
+    enabled: true
+    # Google AI Pricing: https://ai.google.dev/pricing
+    url: "https://ai.google.dev/pricing"
+    # 建议抓取窗口（UTC 时间）
+    window_start: 2
+    window_end: 6
+    # 请求头
+    headers:
+      User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    
+  openai:
+    enabled: true
+    # OpenAI Pricing API + Web
+    url: "https://openai.com/pricing"
+    window_start: 2
+    window_end: 6
+    headers:
+      User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    # 某些接口需要 API Key
+    api_key: ${OPENAI_API_KEY}
+    
+  anthropic:
+    enabled: true
+    url: "https://www.anthropic.com/pricing"
+    window_start: 2
+    window_end: 6
+    headers:
+      User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+
+# TB API 配置
+tb_api:
+  base_url: "http://localhost:8080"
+  # Admin API Token
+  token: ${TB_ADMIN_API_TOKEN}
+  # 超时设置
+  timeout: 30s
+  # 批量导入大小
+  batch_size: 50
+
+# 数据存储配置
+storage:
+  # 历史价格存储（PostgreSQL）
+  # 可以与 TB 使用同一数据库，或独立数据库
+  # 从环境变量 CRAWLER_DATABASE_URL 读取，或在此直接配置
+  database_url: ""  # 空字符串表示从环境变量读取
+  
+  # 数据保留策略
+  retention:
+    # 在线保留天数
+    online_days: 730  # 2年
+    # 归档策略（可选）
+    archive_enabled: false
+
+# AI 日报配置
+ai_report:
+  enabled: true
+  
+  # AI 提供商配置
+  provider:
+    # 可选: openai, deepseek, anthropic
+    name: "deepseek"
+    model: "deepseek-chat"
+    api_key: ${CRAWLER_AI_API_KEY}
+    base_url: "https://api.deepseek.com/v1"
+    # 或 openai:
+    # name: "openai"
+    # model: "gpt-4o-mini"
+    # api_key: ${OPENAI_API_KEY}
+  
+  # 提示词模板
+  prompt_template: |
+    你是一位云服务定价分析师。请根据以下数据生成简洁的中文日报总结（3-5句话）：
+    
+    厂商：{vendor}
+    日期：{date}
+    抓取模型数：{total_models}
+    新增模型：{new_models} 个 {new_list}
+    价格变动：{updated_models} 个
+    - 上涨：{increased_models} 个，平均涨幅 {avg_increase_pct}%
+    - 下降：{decreased_models} 个，平均降幅 {avg_decrease_pct}%
+    
+    请突出重要变化，格式简洁专业。
+
+# 邮件配置
+email:
+  enabled: true
+  smtp:
+    host: ${SMTP_HOST}
+    port: 587
+    username: ${SMTP_USER}
+    password: ${SMTP_PASS}
+    tls: true
+  
+  from: "crawler@tokenbridge.local"
+  to:
+    - "ops@tokenbridge.local"
+    - "product@tokenbridge.local"
+  cc: []
+  
+  subject_template: "[刊例价日报] {date} - {vendor} {summary}"
+  # 是否附加 CSV 详细数据
+  attach_csv: true
+
+# 日志配置
+log:
+  level: info  # debug, info, warn, error
+  format: json # json, text
+  output: stdout # stdout, file
