@@ -1,0 +1,88 @@
+# Token Bridge Intelligence 部署配置
+# 适用于便宜云服务器（2核2G）
+
+version: '3.8'
+
+services:
+  # PostgreSQL 数据库
+  postgres:
+    image: postgres:14-alpine
+    container_name: tb-intelligence-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-tbuser}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-tbpassword}
+      POSTGRES_DB: ${DB_NAME:-tokenbridge}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "127.0.0.1:5432:5432"  # 仅本地访问，不暴露到公网
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-tbuser} -d ${DB_NAME:-tokenbridge}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 情报系统服务
+  intelligence:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: tb-intelligence
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # 数据库连接
+      CRAWLER_DATABASE_URL: postgres://${DB_USER:-tbuser}:${DB_PASSWORD:-tbpassword}@postgres:5432/${DB_NAME:-tokenbridge}?sslmode=disable
+      
+      # 翻译服务配置（可选）
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      BAIDU_APP_ID: ${BAIDU_APP_ID:-}
+      BAIDU_API_KEY: ${BAIDU_API_KEY:-}
+      BAIDU_APP_SECRET: ${BAIDU_APP_SECRET:-}
+      VOLCENGINE_ACCESS_KEY_ID: ${VOLCENGINE_ACCESS_KEY_ID:-}
+      VOLCENGINE_SECRET_ACCESS_KEY: ${VOLCENGINE_SECRET_ACCESS_KEY:-}
+      
+      # AI日报配置（可选）
+      CRAWLER_AI_API_KEY: ${CRAWLER_AI_API_KEY:-}
+      
+      # 邮件配置（可选）
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      
+      # 时区
+      TZ: Asia/Shanghai
+    volumes:
+      - ./config.yaml:/root/config.yaml:ro
+      - ./logs:/root/logs  # 日志持久化
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # 前端控制台
+  console:
+    build:
+      context: ../console
+      dockerfile: Dockerfile
+    container_name: tb-intelligence-console
+    restart: unless-stopped
+    depends_on:
+      - intelligence
+    ports:
+      - "80:80"  # 前端访问端口
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  postgres_data:
+    driver: local
