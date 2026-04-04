@@ -3,6 +3,7 @@ package core
 
 import (
 	"context"
+	"sync"
 	"time"
 )
 
@@ -175,6 +176,7 @@ type CollectorMetrics struct {
 
 // MetricsCollector 指标收集器
 type MetricsCollector struct {
+	mu      sync.RWMutex
 	metrics map[string]*CollectorMetrics
 }
 
@@ -187,6 +189,9 @@ func NewMetricsCollector() *MetricsCollector {
 
 // RecordRun 记录一次采集运行
 func (mc *MetricsCollector) RecordRun(collectorName string, success bool, duration time.Duration, err error) {
+	mc.mu.Lock()
+	defer mc.mu.Unlock()
+	
 	m, ok := mc.metrics[collectorName]
 	if !ok {
 		m = &CollectorMetrics{CollectorName: collectorName}
@@ -218,12 +223,16 @@ func (mc *MetricsCollector) RecordRun(collectorName string, success bool, durati
 
 // GetMetrics 获取采集器指标
 func (mc *MetricsCollector) GetMetrics(collectorName string) (*CollectorMetrics, bool) {
+	mc.mu.RLock()
+	defer mc.mu.RUnlock()
 	m, ok := mc.metrics[collectorName]
 	return m, ok
 }
 
 // GetAllMetrics 获取所有指标
 func (mc *MetricsCollector) GetAllMetrics() []*CollectorMetrics {
+	mc.mu.RLock()
+	defer mc.mu.RUnlock()
 	var result []*CollectorMetrics
 	for _, m := range mc.metrics {
 		result = append(result, m)
