@@ -6,8 +6,8 @@ import { defineConfig } from 'vite'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-// API 代理配置 - 指向爬虫系统服务
-const apiTarget = 'http://localhost:8080'
+// API 代理配置 - 指向爬虫系统服务（使用 8081 避免与主项目 8080 冲突）
+const apiTarget = 'http://localhost:8081'
 
 const apiProxy = {
   '/api': {

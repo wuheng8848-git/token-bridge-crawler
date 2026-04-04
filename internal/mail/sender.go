@@ -10,8 +10,9 @@ import (
 	"text/template"
 	"time"
 
-	"gopkg.in/gomail.v2"
 	"token-bridge-crawler/internal/storage"
+
+	"gopkg.in/gomail.v2"
 )
 
 // Sender 邮件发送器
@@ -116,25 +117,25 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
 </head>
 <body>
 <div class="header">
-<h2>%%s 刊例价日报</h2>
-<p>日期: %%s</p>
+<h2>%s 刊例价日报</h2>
+<p>日期: %s</p>
 </div>
 <div class="summary">
 <h3>AI 总结</h3>
-<p>%%s</p>
+<p>%s</p>
 </div>
 <div class="stats">
 <h3>统计数据</h3>
 <table>
 <tr><th>指标</th><th>数值</th></tr>
-<tr><td>总模型数</td><td>%%d</td></tr>
-<tr><td>新增模型</td><td>%%d</td></tr>
-<tr><td>价格变动</td><td>%%d</td></tr>
+<tr><td>总模型数</td><td>%d</td></tr>
+<tr><td>新增模型</td><td>%d</td></tr>
+<tr><td>价格变动</td><td>%d</td></tr>
 </table>
 </div>
 <div class="footer">
 <p>此邮件由 Token Bridge Crawler 自动生成</p>
-<p>生成时间: %%s</p>
+<p>生成时间: %s</p>
 </div>
 </body>
 </html>`,

@@ -60,10 +60,10 @@ func (c *HackerNewsCollector) CollectUserPains(ctx context.Context) ([]core.Inte
 
 // searchStories 搜索HackerNews故事
 func (c *HackerNewsCollector) searchStories(ctx context.Context, query string) ([]core.IntelItem, error) {
-	// 使用Algolia HN Search API
+	// 使用Algolia HN Search API（搜索最近三个月）
 	url := fmt.Sprintf("https://hn.algolia.com/api/v1/search?query=%s&tags=story&numericFilters=created_at_i>%d",
 		strings.ReplaceAll(query, " ", "+"),
-		time.Now().AddDate(0, -1, 0).Unix(), // 最近一个月
+		time.Now().AddDate(0, -3, 0).Unix(), // 最近三个月
 	)
 
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
@@ -100,8 +100,8 @@ func (c *HackerNewsCollector) searchStories(ctx context.Context, query string) (
 
 	var items []core.IntelItem
 	for _, hit := range result.Hits {
-		// 只关注高互动内容
-		if hit.Points < 50 && hit.NumComments < 20 {
+		// 放宽筛选条件：只要有一定互动即可（点赞>=10 或 评论>=5）
+		if hit.Points < 10 && hit.NumComments < 5 {
 			continue
 		}
 

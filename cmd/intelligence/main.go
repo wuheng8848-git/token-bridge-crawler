@@ -279,8 +279,9 @@ func main() {
 			log.Fatalf("[Intelligence] 启动调度器失败: %v", err)
 		}
 
-		// 启动 API 服务
-		apiServer := api.NewServer(registry, store, sched, "8080")
+		// 启动 API 服务（使用 8081 端口，避免与主项目 8080 冲突）
+		apiPort := getEnv("API_PORT", "8081")
+		apiServer := api.NewServer(registry, store, sched, apiPort)
 		apiServer.Start()
 
 		// 等待中断信号
@@ -288,7 +289,7 @@ func main() {
 		signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
 		log.Println("[Intelligence] 系统运行中，按 Ctrl+C 退出...")
-		log.Println("[Intelligence] API 地址: http://localhost:8080")
+		log.Printf("[Intelligence] API 地址: http://localhost:%s", apiPort)
 		<-sigChan
 
 		// 停止系统

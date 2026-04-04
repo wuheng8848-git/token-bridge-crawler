@@ -14,6 +14,12 @@ Token Bridge Intelligence 是情报感知系统，用于采集市场情报、检
 | Kubernetes CronJob | 生产环境 | 中 |
 | 直接部署 | 简单环境 | 低 |
 
+## 端口与健康检查口径
+
+- `TB_BASE_URL` 指向 TBv2 的后端 API（常见为 `8080`），用于调用 Admin API（如 `POST /v1/admin/supplier_catalog_staging/import`）
+- 本项目自身会启动一个 HTTP API/健康检查服务，端口由 `API_PORT` 控制，默认 `8081`，用于避免与 TBv2 的 `8080` 抢占端口
+- 健康检查路径：`GET /healthz`（示例：`curl http://127.0.0.1:8081/healthz`）
+
 ## 方式一：Docker Compose（推荐开发/测试）
 
 ### 1. 构建镜像

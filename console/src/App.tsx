@@ -10,7 +10,7 @@ import { Settings } from './components/Settings'
 import { AppMenu } from './components/AppMenu'
 import { useAdminTheme } from './theme/AdminThemeContext'
 
-function App() {
+export function App() {
   const { mode } = useAdminTheme()
   const [currentView, setCurrentView] = useState('dashboard')
 

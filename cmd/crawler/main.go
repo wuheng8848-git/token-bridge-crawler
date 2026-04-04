@@ -7,6 +7,8 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -102,12 +104,32 @@ func main() {
 		})
 	}
 
+	var mainProj *internal.TBClient
+	baseURL := strings.TrimSpace(os.Getenv("TB_BASE_URL"))
+	apiToken := strings.TrimSpace(os.Getenv("TB_ADMIN_API_TOKEN"))
+	if baseURL != "" && apiToken != "" {
+		baseURL = strings.TrimRight(baseURL, "/")
+		mainProj = internal.NewTBClient(baseURL, apiToken)
+		log.Println("[Main] 已配置 TB_BASE_URL + TB_ADMIN_API_TOKEN，抓取成功后将推送 supplier_catalog_staging/import")
+	} else {
+		log.Println("[Main] 未同时配置 TB_BASE_URL 与 TB_ADMIN_API_TOKEN，跳过推送到主系统")
+	}
+
+	pushBatch := 50
+	if v := strings.TrimSpace(os.Getenv("TB_IMPORT_BATCH_SIZE")); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			pushBatch = n
+		}
+	}
+
 	// 创建调度器
 	scheduler := internal.NewScheduler(internal.Config{
-		Vendors:    vendorAdapters,
-		Storage:    store,
-		Summarizer: summarizer,
-		MailSender: mailSender,
+		Vendors:       vendorAdapters,
+		Storage:       store,
+		Summarizer:    summarizer,
+		MailSender:    mailSender,
+		MainProject:   mainProj,
+		PushBatchSize: pushBatch,
 	})
 
 	if *once {

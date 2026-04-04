@@ -8,19 +8,22 @@ import (
 	"math"
 	"time"
 
-	"github.com/google/uuid"
 	"token-bridge-crawler/internal/adapters"
 	"token-bridge-crawler/internal/ai"
 	"token-bridge-crawler/internal/mail"
 	"token-bridge-crawler/internal/storage"
+
+	"github.com/google/uuid"
 )
 
 // Scheduler 爬虫调度器
 type Scheduler struct {
-	vendors    []adapters.VendorAdapter
-	storage    storage.Storage
-	summarizer *ai.Summarizer
-	mailSender *mail.Sender
+	vendors      []adapters.VendorAdapter
+	storage      storage.Storage
+	summarizer   *ai.Summarizer
+	mailSender   *mail.Sender
+	mainProject  *TBClient
+	pushBatch    int
 	vendorStates map[string]*VendorState
 }
 
@@ -38,6 +41,10 @@ type Config struct {
 	Storage    storage.Storage
 	Summarizer *ai.Summarizer
 	MailSender *mail.Sender
+	// MainProject 非 nil 时，抓取成功写入本地库后推送 POST /v1/admin/supplier_catalog_staging/import（Bearer 见 TB_ADMIN_API_TOKEN）。
+	MainProject *TBClient
+	// PushBatchSize ImportPrices 每批条数，≤0 时默认 50。
+	PushBatchSize int
 }
 
 // NewScheduler 创建调度器
@@ -49,11 +56,18 @@ func NewScheduler(cfg Config) *Scheduler {
 		}
 	}
 
+	batch := cfg.PushBatchSize
+	if batch <= 0 {
+		batch = 50
+	}
+
 	return &Scheduler{
 		vendors:      cfg.Vendors,
 		storage:      cfg.Storage,
 		summarizer:   cfg.Summarizer,
 		mailSender:   cfg.MailSender,
+		mainProject:  cfg.MainProject,
+		pushBatch:    batch,
 		vendorStates: states,
 	}
 }
@@ -164,6 +178,15 @@ func (s *Scheduler) crawlVendor(ctx context.Context, vendor adapters.VendorAdapt
 
 	if err := s.storage.SavePriceDetails(ctx, details); err != nil {
 		return snapshot, fmt.Errorf("save details failed: %w", err)
+	}
+
+	if s.mainProject != nil && len(prices) > 0 {
+		source := fmt.Sprintf("%s-%s", vendor.Name(), snapshotDate.Format("2006-01-02"))
+		if err := s.mainProject.ImportPrices(ctx, prices, source, nil, s.pushBatch); err != nil {
+			log.Printf("[Scheduler] 推送主系统 supplier_catalog_staging 失败: %v", err)
+		} else {
+			log.Printf("[Scheduler] 已推送主系统 supplier_catalog_staging: vendor=%s models=%d", vendor.Name(), len(prices))
+		}
 	}
 
 	if s.summarizer != nil && s.mailSender != nil {

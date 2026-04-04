@@ -73,7 +73,8 @@ func (c *RedditCollector) CollectUserPains(ctx context.Context) ([]core.IntelIte
 // searchPosts 搜索Reddit帖子
 func (c *RedditCollector) searchPosts(ctx context.Context, subreddit, keyword string) ([]core.IntelItem, error) {
 	// 使用Reddit JSON API (无需认证，有限制)
-	url := fmt.Sprintf("https://www.reddit.com/r/%s/search.json?q=%s&sort=new&restrict_sr=1&t=month",
+	// 扩大时间范围到一年
+	url := fmt.Sprintf("https://www.reddit.com/r/%s/search.json?q=%s&sort=relevance&restrict_sr=1&t=year&limit=25",
 		subreddit,
 		strings.ReplaceAll(keyword, " ", "+"),
 	)
@@ -83,8 +84,8 @@ func (c *RedditCollector) searchPosts(ctx context.Context, subreddit, keyword st
 		return nil, err
 	}
 
-	// 设置User-Agent
-	req.Header.Set("User-Agent", "TokenBridge-Intelligence/1.0")
+	// 设置更完整的User-Agent（Reddit要求）
+	req.Header.Set("User-Agent", "TokenBridge-Intelligence/1.0 (by /u/tokenbridge_bot)")
 
 	resp, err := c.client.Do(req)
 	if err != nil {

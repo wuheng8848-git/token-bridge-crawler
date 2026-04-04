@@ -1,8 +1,34 @@
-# Token Bridge Crawler 部署指南
+# Token Bridge Intelligence 部署指南
 
 ## 概述
 
-Token Bridge Crawler 是一个独立的爬虫服务，用于抓取 Google、OpenAI、Anthropic 等厂商的模型刊例价，并导入到 TB 系统中。
+Token Bridge Intelligence 是情报感知系统，用于采集市场情报、检测客户信号、生成内部建议。
+
+**重要**：本项目不是自动化营销系统，所有动作停留在内部建议层，不自动外发。
+
+## 当前阶段判断
+
+### 已完成
+
+- ✅ 多类型情报采集器
+- ✅ 统一情报存储
+- ✅ 信号检测器
+- ✅ 动作生成器
+- ✅ 信号/动作持久化
+
+### 已接上的链路
+
+```
+ProcessIntel(...) → SaveSignals(...) → SaveActions(...)
+```
+
+### 当前动作层边界
+
+| 属性 | 值 | 说明 |
+|------|-----|------|
+| Channel | `internal` | 统一使用内部渠道 |
+| AutoExecute | `false` | 不自动执行 |
+| Status | `draft` | 草稿状态，需人工审核 |
 
 ## 部署方式
 
@@ -12,26 +38,26 @@ Token Bridge Crawler 是一个独立的爬虫服务，用于抓取 Google、Open
 
 ```yaml
 services:
-  crawler:
+  intelligence:
     build:
       context: ../../token-bridge-crawler
       dockerfile: Dockerfile
-    container_name: tbv2-crawler
+    container_name: tbv2-intelligence
     environment:
       - CRAWLER_DATABASE_URL=${DATABASE_URL}
       - TB_ADMIN_API_TOKEN=${TB_ADMIN_API_TOKEN}
       - CRAWLER_AI_API_KEY=${CRAWLER_AI_API_KEY}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
       - SMTP_HOST=${SMTP_HOST}
       - SMTP_USER=${SMTP_USER}
       - SMTP_PASS=${SMTP_PASS}
     volumes:
-      - ./crawler-config.yaml:/root/config.yaml:ro
+      - ./intelligence-config.yaml:/root/config.yaml:ro
     depends_on:
       - api
       - postgres
     restart: unless-stopped
-    # 使用 cron 模式运行
-    command: ["./crawler"]
+    command: ["./intelligence"]
 ```
 
 ### 方式二：Kubernetes CronJob
@@ -40,7 +66,7 @@ services:
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: token-bridge-crawler
+  name: token-bridge-intelligence
 spec:
   schedule: "0 2 * * *"  # 每天凌晨 2 点
   jobTemplate:
@@ -48,18 +74,18 @@ spec:
       template:
         spec:
           containers:
-          - name: crawler
-            image: token-bridge-crawler:latest
+          - name: intelligence
+            image: token-bridge-intelligence:latest
             env:
             - name: CRAWLER_DATABASE_URL
               valueFrom:
                 secretKeyRef:
-                  name: crawler-secrets
+                  name: intelligence-secrets
                   key: database-url
             - name: TB_ADMIN_API_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: crawler-secrets
+                  name: intelligence-secrets
                   key: tb-token
             resources:
               requests:
@@ -75,25 +101,27 @@ spec:
 
 ```bash
 # 1. 克隆代码
-git clone <repo> /opt/token-bridge-crawler
-cd /opt/token-bridge-crawler
+git clone <repo> /opt/token-bridge-intelligence
+cd /opt/token-bridge-intelligence
 
-# 2. 构建
-go build -o crawler ./cmd/crawler
+# 2. 构建（使用情报系统入口）
+go build -o intelligence ./cmd/intelligence
 
 # 3. 配置环境变量
 cp .env.example .env
 # 编辑 .env
 
 # 4. 运行迁移
-make migrate-up
+psql $CRAWLER_DATABASE_URL -f deploy/migrations/001_create_vendor_price_tables.up.sql
+psql $CRAWLER_DATABASE_URL -f deploy/migrations/002_create_intelligence_tables.up.sql
+psql $CRAWLER_DATABASE_URL -f deploy/migrations/003_create_marketing_tables.up.sql
 
 # 5. 测试单次运行
-./crawler -once
+./intelligence -once
 
 # 6. 配置 systemd 服务或 crontab
 # Crontab 示例：
-# 0 2 * * * cd /opt/token-bridge-crawler && ./crawler -once >> /var/log/crawler.log 2>&1
+# 0 2 * * * cd /opt/token-bridge-intelligence && ./intelligence -once >> /var/log/intelligence.log 2>&1
 ```
 
 ## 环境变量配置
@@ -104,6 +132,7 @@ make migrate-up
 | `TB_ADMIN_API_TOKEN` | TB Admin API Token | `sk-xxx` |
 | `TB_BASE_URL` | TB API 地址 | `http://localhost:8080` |
 | `CRAWLER_AI_API_KEY` | AI 日报用的 API Key | `sk-xxx` |
+| `OPENROUTER_API_KEY` | OpenRouter 翻译服务 | `sk-xxx` |
 | `OPENAI_API_KEY` | OpenAI API Key（用于抓取） | `sk-xxx` |
 | `SMTP_HOST` | SMTP 服务器 | `smtp.gmail.com` |
 | `SMTP_USER` | SMTP 用户名 | `user@gmail.com` |
@@ -111,18 +140,17 @@ make migrate-up
 
 ## 数据库迁移
 
-爬虫需要以下表：
+情报系统需要以下表：
 
 ```bash
-# 在 TB 数据库中执行
-psql $DATABASE_URL -f migrations/000016_vendor_price_history.up.sql
-```
+# 价格相关表（旧）
+psql $DATABASE_URL -f deploy/migrations/001_create_vendor_price_tables.up.sql
 
-或在 TB 项目中执行：
+# 情报相关表
+psql $DATABASE_URL -f deploy/migrations/002_create_intelligence_tables.up.sql
 
-```bash
-cd token-bridge-v2/apps/api
-go run ./cmd/migrate -command=up
+# 营销相关表
+psql $DATABASE_URL -f deploy/migrations/003_create_marketing_tables.up.sql
 ```
 
 ## 监控与告警
@@ -130,33 +158,26 @@ go run ./cmd/migrate -command=up
 ### 日志检查
 
 ```bash
-# 查看最近抓取记录
-psql $DATABASE_URL -c "SELECT vendor, snapshot_date, total_models, status FROM vendor_price_snapshots ORDER BY snapshot_date DESC LIMIT 10;"
+# 查看最近情报采集记录
+psql $DATABASE_URL -c "SELECT intel_type, source, status, items_count FROM collector_runs ORDER BY started_at DESC LIMIT 10;"
 
-# 查看失败记录
-psql $DATABASE_URL -c "SELECT * FROM vendor_price_snapshots WHERE status != 'success' ORDER BY snapshot_date DESC;"
-```
+# 查看检测到的信号
+psql $DATABASE_URL -c "SELECT signal_type, strength, platform FROM customer_signals ORDER BY detected_at DESC LIMIT 10;"
 
-### Prometheus 指标（可选）
-
-可添加以下指标暴露：
-
-```go
-// crawler_last_success_timestamp{vendor}
-// crawler_models_total{vendor}
-// crawler_models_changed{vendor, type="new|updated|removed"}
+# 确认动作未自动执行
+psql $DATABASE_URL -c "SELECT status, COUNT(*) FROM marketing_actions GROUP BY status;"
 ```
 
 ## 故障排查
 
-### 问题：抓取返回空数据
+### 问题：情报采集返回空数据
 
-1. 检查厂商页面结构是否变化
-2. 检查是否被限流（查看 `vendor_price_snapshots.error_log`）
-3. 手动测试适配器：
+1. 检查数据源是否可访问
+2. 检查是否被限流
+3. 手动测试：
 
 ```bash
-go run ./cmd/crawler -once -vendor=google
+go run ./cmd/intelligence -once
 ```
 
 ### 问题：邮件发送失败
@@ -173,28 +194,19 @@ go run ./cmd/crawler -once -vendor=google
 
 ## 升级维护
 
-### 更新价格表
+### 添加新采集器
 
-当 OpenAI/Google 发布新模型时：
-
-1. 更新 `internal/adapters/openai.go` 中的 `getPricingTable()`
-2. 重新构建镜像
-3. 部署
-
-### 添加新厂商
-
-1. 在 `internal/adapters/` 创建新的适配器
+1. 在 `internal/collectors/<type>/` 创建新的采集器
 2. 在 `config.yaml` 中添加配置
-3. 更新 `cmd/crawler/main.go` 中的适配器初始化
+3. 在 `cmd/intelligence/main.go` 中注册采集器
 
-## 附录：手动测试脚本
+### 添加新信号检测器
 
-```powershell
-# Windows PowerShell
-.\scripts\test-crawler.ps1 -Vendor google -DatabaseURL "postgres://..."
-```
+1. 在 `internal/marketing/detectors/` 创建新的检测器
+2. 在 `internal/marketing/signal_model.go` 中注册检测器
 
-```bash
-# Linux/Mac
-./scripts/test-crawler.sh google "postgres://..."
-```
+---
+
+**文档维护**：Token Bridge Team
+**最后更新**：2026-03-31
+**版本**：v2.0

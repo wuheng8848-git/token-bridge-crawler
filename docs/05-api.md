@@ -288,13 +288,20 @@ GROUP BY auto_execute;
 |--------|------|
 | `CRAWLER_DATABASE_URL` | 数据库连接字符串 |
 | `TB_ADMIN_API_TOKEN` | TB Admin API Token |
-| `TB_BASE_URL` | TB API 基础地址 |
+| `TB_BASE_URL` | TBv2 后端 API 基础地址（例如 `http://127.0.0.1:8080`），不要填写前端/控制台/开发服务器端口（如 `5173` / `3000` / `3001`） |
 | `CRAWLER_AI_API_KEY` | AI 日报 API Key |
 | `OPENROUTER_API_KEY` | OpenRouter 翻译服务 API Key |
 | `OPENAI_API_KEY` | OpenAI API Key |
 | `SMTP_HOST` | SMTP 服务器地址 |
 | `SMTP_USER` | SMTP 用户名 |
 | `SMTP_PASS` | SMTP 密码 |
+
+#### TB_BASE_URL 防误配
+
+`TB_BASE_URL` 用于拼接并调用 TBv2 Admin API（例如 `POST /v1/admin/supplier_catalog_staging/import`）。它必须指向 TBv2 的后端 API 服务端口，而不是前端页面端口。
+
+- 正确示例：`http://127.0.0.1:8080`（TBv2 API）
+- 常见误配：`http://127.0.0.1:5173` / `http://localhost:3000` / `http://localhost:3001`（通常是前端 dev server 或管理台端口）
 
 ## 采集器接口规范
 
