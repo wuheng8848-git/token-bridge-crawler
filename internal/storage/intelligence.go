@@ -184,17 +184,25 @@ func (s *PostgresIntelligenceStorage) SaveItem(ctx context.Context, item *core.I
 
 	_, err = s.pool.Exec(ctx, `
 		INSERT INTO intelligence_items
-		(id, intel_type, source, source_id, title, content, url, metadata, captured_at, published_at, status, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+		(id, intel_type, source, source_id, title, content, url, metadata, captured_at, published_at, status, created_at,
+		 quality_score, is_noise, filter_reason, customer_tier, signal_type, pain_score)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
 		ON CONFLICT (source, source_id, captured_at) WHERE source_id IS NOT NULL
 		DO UPDATE SET
 			title = EXCLUDED.title,
 			content = EXCLUDED.content,
 			metadata = EXCLUDED.metadata,
+			quality_score = EXCLUDED.quality_score,
+			is_noise = EXCLUDED.is_noise,
+			filter_reason = EXCLUDED.filter_reason,
+			customer_tier = EXCLUDED.customer_tier,
+			signal_type = EXCLUDED.signal_type,
+			pain_score = EXCLUDED.pain_score,
 			updated_at = NOW()
 	`, item.ID, item.IntelType, item.Source, item.SourceID,
 		item.Title, item.Content, item.URL, metadataJSON,
-		item.CapturedAt, item.PublishedAt, item.Status, item.CreatedAt)
+		item.CapturedAt, item.PublishedAt, item.Status, item.CreatedAt,
+		item.QualityScore, item.IsNoise, item.FilterReason, item.CustomerTier, item.SignalType, item.PainScore)
 
 	return err
 }
@@ -210,17 +218,25 @@ func (s *PostgresIntelligenceStorage) SaveItems(ctx context.Context, items []cor
 		metadataJSON, _ := json.Marshal(item.Metadata)
 		batch.Queue(`
 			INSERT INTO intelligence_items
-			(id, intel_type, source, source_id, title, content, url, metadata, captured_at, published_at, status, created_at)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+			(id, intel_type, source, source_id, title, content, url, metadata, captured_at, published_at, status, created_at,
+			 quality_score, is_noise, filter_reason, customer_tier, signal_type, pain_score)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
 			ON CONFLICT (source, source_id, captured_at) WHERE source_id IS NOT NULL
 			DO UPDATE SET
 				title = EXCLUDED.title,
 				content = EXCLUDED.content,
 				metadata = EXCLUDED.metadata,
+				quality_score = EXCLUDED.quality_score,
+				is_noise = EXCLUDED.is_noise,
+				filter_reason = EXCLUDED.filter_reason,
+				customer_tier = EXCLUDED.customer_tier,
+				signal_type = EXCLUDED.signal_type,
+				pain_score = EXCLUDED.pain_score,
 				updated_at = NOW()
 		`, item.ID, item.IntelType, item.Source, item.SourceID,
 			item.Title, item.Content, item.URL, metadataJSON,
-			item.CapturedAt, item.PublishedAt, item.Status, item.CreatedAt)
+			item.CapturedAt, item.PublishedAt, item.Status, item.CreatedAt,
+			item.QualityScore, item.IsNoise, item.FilterReason, item.CustomerTier, item.SignalType, item.PainScore)
 	}
 
 	results := s.pool.SendBatch(ctx, batch)

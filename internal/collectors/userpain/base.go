@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"token-bridge-crawler/internal/core"
+	"token-bridge-crawler/internal/httpclient"
 )
 
 // UserPainCollector 用户痛点采集器接口
@@ -16,9 +17,10 @@ type UserPainCollector interface {
 
 // BaseUserPainCollector 基础用户痛点采集器
 type BaseUserPainCollector struct {
-	name     string
-	source   string
-	interval time.Duration
+	name       string
+	source     string
+	interval   time.Duration
+	httpClient *httpclient.Client
 }
 
 // NewBaseUserPainCollector 创建基础用户痛点采集器
@@ -27,6 +29,16 @@ func NewBaseUserPainCollector(name, source string, interval time.Duration) *Base
 		name:     name,
 		source:   source,
 		interval: interval,
+	}
+}
+
+// NewBaseUserPainCollectorWithHTTP 创建带 HTTP 客户端的基础采集器
+func NewBaseUserPainCollectorWithHTTP(name, source string, interval time.Duration, httpClient *httpclient.Client) *BaseUserPainCollector {
+	return &BaseUserPainCollector{
+		name:       name,
+		source:     source,
+		interval:   interval,
+		httpClient: httpClient,
 	}
 }
 

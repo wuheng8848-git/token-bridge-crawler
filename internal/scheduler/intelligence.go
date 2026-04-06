@@ -11,6 +11,8 @@ import (
 	"github.com/robfig/cron/v3"
 
 	"token-bridge-crawler/internal/core"
+	"token-bridge-crawler/internal/pipeline"
+	"token-bridge-crawler/internal/rules"
 	"token-bridge-crawler/internal/storage"
 )
 
@@ -20,6 +22,7 @@ type IntelligenceScheduler struct {
 	storage  storage.IntelligenceStorage
 	cron     *cron.Cron
 	metrics  *core.MetricsCollector
+	pipeline *pipeline.Pipeline
 
 	// 运行状态
 	running map[string]bool
@@ -36,6 +39,9 @@ type SchedulerConfig struct {
 	MaxRetries       int
 	RetryDelay       time.Duration
 
+	// 噪声过滤配置
+	EnableNoiseFilter bool
+
 	// 采集器特定配置
 	CollectorConfigs map[string]CollectorConfig
 }
@@ -50,14 +56,33 @@ type CollectorConfig struct {
 // NewIntelligenceScheduler 创建情报调度器
 func NewIntelligenceScheduler(
 	registry *core.CollectorRegistry,
-	storage storage.IntelligenceStorage,
+	store storage.IntelligenceStorage,
 	config SchedulerConfig,
 ) *IntelligenceScheduler {
+	// 创建规则引擎（使用默认规则）
+	ruleEngine := rules.NewEngineWithDefaults()
+
+	return NewIntelligenceSchedulerWithEngine(registry, store, config, ruleEngine)
+}
+
+// NewIntelligenceSchedulerWithEngine 创建带自定义规则引擎的情报调度器
+func NewIntelligenceSchedulerWithEngine(
+	registry *core.CollectorRegistry,
+	store storage.IntelligenceStorage,
+	config SchedulerConfig,
+	ruleEngine rules.RuleEngine,
+) *IntelligenceScheduler {
+	// 创建处理管道
+	pipeConfig := pipeline.DefaultPipelineConfig()
+	pipeConfig.EnableNoiseFilter = config.EnableNoiseFilter
+	pipe := pipeline.NewPipeline(ruleEngine, store, pipeConfig)
+
 	return &IntelligenceScheduler{
 		registry: registry,
-		storage:  storage,
+		storage:  store,
 		cron:     cron.New(cron.WithSeconds()),
 		metrics:  core.NewMetricsCollector(),
+		pipeline: pipe,
 		running:  make(map[string]bool),
 		config:   config,
 	}
@@ -206,17 +231,22 @@ func (s *IntelligenceScheduler) executeCollector(ctx context.Context, collector 
 		}
 	}
 
-	// 保存数据
+	// 使用 Pipeline 处理数据（噪声过滤 + 存储）
+	var signalCount, noiseCount int
 	if len(items) > 0 {
-		if saveErr := s.storage.SaveItems(ctx, items); saveErr != nil {
+		result, procErr := s.pipeline.ProcessAndStore(ctx, items)
+		if procErr != nil {
 			run.Status = "partial"
-			run.ErrorMessage = saveErr.Error()
-			log.Printf("[Scheduler] 采集器 %s 保存数据失败: %v", collector.Name(), saveErr)
+			run.ErrorMessage = procErr.Error()
+			log.Printf("[Scheduler] 采集器 %s 处理数据失败: %v", collector.Name(), procErr)
 		} else {
 			run.Status = "success"
-			log.Printf("[Scheduler] 采集器 %s 成功保存 %d 条数据", collector.Name(), len(items))
+			signalCount = result.Signal
+			noiseCount = result.Noise
+			log.Printf("[Scheduler] 采集器 %s 成功: 采集 %d 条, 信号 %d 条, 噪声 %d 条, 过滤率 %.1f%%",
+				collector.Name(), result.Total, signalCount, noiseCount, result.GetStats()["noise_rate"])
 		}
-		run.ItemsCount = len(items)
+		run.ItemsCount = signalCount
 	} else {
 		run.Status = "success"
 		log.Printf("[Scheduler] 采集器 %s 未获取到数据", collector.Name())

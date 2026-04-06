@@ -85,6 +85,10 @@ DB_USER=tbuser
 DB_PASSWORD=your_secure_password_here
 DB_NAME=tokenbridge
 
+# Tavily API Key（推荐配置，用于搜索引擎采集）
+# 获取地址: https://tavily.com (免费版每月1000次搜索)
+TAVILY_API_KEY=tvly-dev-xxxxxxxxxxxx
+
 # 其他配置可以先不填，系统会跳过相关功能
 ```
 
@@ -127,19 +131,22 @@ docker-compose ps
 
 ```bash
 # 健康检查
-curl http://localhost:8080/healthz
+curl http://localhost:8081/healthz
 
 # 预期输出:
 # {"status":"ok","timestamp":"2026-04-03T..."}
 
 # 查看采集器列表
-curl http://localhost:8080/api/v1/collectors
+curl http://localhost:8081/api/v1/collectors
 
 # 查看情报统计
-curl http://localhost:8080/api/v1/stats/intelligence
+curl http://localhost:8081/api/v1/stats/intelligence
+
+# 查看信号统计
+curl http://localhost:8081/api/v1/stats/signals
 
 # 查看采集器运行记录
-curl http://localhost:8080/api/v1/collector-runs
+curl http://localhost:8081/api/v1/collector-runs
 ```
 
 ### 4.3 查看日志
@@ -287,12 +294,12 @@ docker-compose exec postgres psql -U tbuser -d tokenbridge -c "SELECT 1"
 
 ```bash
 # 检查端口监听
-netstat -tlnp | grep 8080
+netstat -tlnp | grep 8081
 
 # 检查防火墙
 sudo ufw status
 # 或
-sudo iptables -L -n | grep 8080
+sudo iptables -L -n | grep 8081
 ```
 
 ### 问题4: 内存不足
@@ -319,7 +326,7 @@ sudo swapon /swapfile
 sudo ufw default deny incoming
 sudo ufw default allow outgoing
 sudo ufw allow 22/tcp      # SSH
-sudo ufw allow 8080/tcp    # 情报系统 API
+sudo ufw allow 8081/tcp    # 情报系统 API
 sudo ufw enable
 ```
 
@@ -382,11 +389,29 @@ docker-compose exec intelligence sh
 docker-compose exec postgres psql -U tbuser -d tokenbridge
 
 # 查看统计
-curl http://localhost:8080/api/v1/stats/intelligence | jq
+curl http://localhost:8081/api/v1/stats/intelligence | jq
 ```
 
 ---
 
+## 11. 更新日志
+
+### v1.1 (2026-04-06)
+- **新增**: Tavily 搜索引擎采集器支持
+  - 需要配置 `TAVILY_API_KEY`
+  - 支持迁移意愿、成本压力等信号采集
+- **修复**: API 端口从 8080 改为 8081（避免与主项目冲突）
+- **修复**: 健康检查端点 `/health` 改为 `/healthz`
+- **优化**: 规则引擎支持数据库持久化（21条规则）
+- **优化**: 翻译策略采用保守模式（质量分≥60才翻译）
+
+### v1.0 (2026-04-03)
+- 初始版本
+- 支持价格采集、用户痛点采集
+- 基础 API 服务
+
+---
+
 **文档维护**: Token Bridge Team
-**最后更新**: 2026-04-03
-**版本**: v1.0
+**最后更新**: 2026-04-06
+**版本**: v1.1

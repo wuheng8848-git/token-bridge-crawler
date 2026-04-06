@@ -3,6 +3,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"flag"
 	"fmt"
 	"log"
@@ -13,6 +14,7 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
 
 	"token-bridge-crawler/internal/ai"
 	"token-bridge-crawler/internal/api"
@@ -22,6 +24,7 @@ import (
 	"token-bridge-crawler/internal/collectors/integration"
 	"token-bridge-crawler/internal/collectors/policy"
 	"token-bridge-crawler/internal/collectors/price"
+	"token-bridge-crawler/internal/collectors/search"
 	"token-bridge-crawler/internal/collectors/tool"
 	"token-bridge-crawler/internal/collectors/usage"
 	"token-bridge-crawler/internal/collectors/useracquisition"
@@ -29,6 +32,7 @@ import (
 	"token-bridge-crawler/internal/core"
 	"token-bridge-crawler/internal/marketing"
 	"token-bridge-crawler/internal/reporter"
+	"token-bridge-crawler/internal/rules"
 	"token-bridge-crawler/internal/scheduler"
 	"token-bridge-crawler/internal/storage"
 )
@@ -68,8 +72,14 @@ func main() {
 			config.VolcengineSecretAccessKey,
 		)
 		translationService.SetBatchSize(config.TranslationBatchSize)
-		store = storage.NewTranslatedStorage(baseStore, translationService)
-		log.Println("[Translation] 翻译服务已启用，使用多API队列")
+
+		// 使用保守翻译策略（只翻译高质量情报，节省API额度）
+		strategy := storage.ConservativeTranslationStrategy()
+		// 或者使用默认策略：strategy := storage.DefaultTranslationStrategy()
+		translatedStore := storage.NewTranslatedStorageWithStrategy(baseStore, translationService, strategy)
+		store = translatedStore
+		log.Printf("[Translation] 翻译服务已启用，使用保守策略（质量分≥%.0f，每批最多%d条）",
+			strategy.MinQualityScore, strategy.MaxItemsPerBatch)
 	} else {
 		log.Println("[Translation] 翻译服务已禁用")
 	}
@@ -107,6 +117,39 @@ func main() {
 	// 注册社区采集器（Discord 等）
 	registerCommunityCollectors(registry, config)
 
+	// 初始化规则引擎（使用数据库规则）
+	var ruleEngine rules.RuleEngine
+	if config.DatabaseURL != "" {
+		// 尝试从数据库加载规则
+		// 注意：这里使用独立的连接，因为规则引擎需要在整个生命周期中访问数据库
+		db, err := sql.Open("postgres", config.DatabaseURL)
+		if err == nil {
+			// 测试连接
+			if pingErr := db.Ping(); pingErr == nil {
+				ruleStorage := rules.NewDBStorage(db)
+				engine, err := rules.NewEngine(ruleStorage)
+				if err != nil {
+					log.Printf("[Rules] Failed to load rules from database, using defaults: %v", err)
+					db.Close()
+					ruleEngine = rules.NewEngineWithDefaults()
+				} else {
+					log.Println("[Rules] Loaded rules from database")
+					ruleEngine = engine
+					// 注意：db 连接不关闭，规则引擎需要持续使用
+				}
+			} else {
+				log.Printf("[Rules] Failed to ping database, using defaults: %v", pingErr)
+				db.Close()
+				ruleEngine = rules.NewEngineWithDefaults()
+			}
+		} else {
+			log.Printf("[Rules] Failed to connect to database for rules, using defaults: %v", err)
+			ruleEngine = rules.NewEngineWithDefaults()
+		}
+	} else {
+		ruleEngine = rules.NewEngineWithDefaults()
+	}
+
 	// 初始化调度器
 	schedConfig := scheduler.SchedulerConfig{
 		DefaultRateLimit: 5 * time.Second,
@@ -115,7 +158,7 @@ func main() {
 		CollectorConfigs: make(map[string]scheduler.CollectorConfig),
 	}
 
-	sched := scheduler.NewIntelligenceScheduler(registry, store, schedConfig)
+	sched := scheduler.NewIntelligenceSchedulerWithEngine(registry, store, schedConfig, ruleEngine)
 
 	// 初始化日报生成器
 	dailyConfig := reporter.DailyReportConfig{
@@ -316,6 +359,8 @@ type Config struct {
 	// Discord 配置
 	DiscordBotToken   string
 	DiscordChannelIDs []string
+	// Tavily 搜索配置
+	TavilyAPIKey string
 }
 
 // loadConfig 加载配置
@@ -335,6 +380,7 @@ func loadConfig() *Config {
 		TranslationBatchSize:      getEnvInt("TRANSLATION_BATCH_SIZE", 5),
 		DiscordBotToken:           getEnv("DISCORD_BOT_TOKEN", ""),
 		DiscordChannelIDs:         getEnvList("DISCORD_CHANNEL_IDS", []string{}),
+		TavilyAPIKey:              getEnv("TAVILY_API_KEY", ""),
 	}
 
 	// 确保静态目录存在
@@ -466,6 +512,15 @@ func registerUserPainCollectors(registry *core.CollectorRegistry, config *Config
 	configPainCollector := userpain.NewConfigPainCollector()
 	registry.Register(configPainCollector)
 	log.Println("[Registry] 注册配置痛点采集器")
+
+	// Tavily 搜索采集器（需要 API Key）
+	if config.TavilyAPIKey != "" {
+		tavilyCollector := search.NewTavilyCollector(config.TavilyAPIKey)
+		registry.Register(tavilyCollector)
+		log.Println("[Registry] 注册 Tavily 搜索采集器")
+	} else {
+		log.Println("[Registry] Tavily API Key 未配置，跳过注册")
+	}
 }
 
 // registerToolEcosystemCollectors 注册工具生态采集器

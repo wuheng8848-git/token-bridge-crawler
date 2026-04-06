@@ -56,6 +56,14 @@ type IntelItem struct {
 	// 处理状态
 	Status    IntelStatus `json:"status" db:"status"` // 'new', 'processed', 'alerted', 'ignored'
 	CreatedAt time.Time   `json:"created_at" db:"created_at"`
+
+	// 质量评分字段（处理层填充）
+	QualityScore *float64 `json:"quality_score,omitempty" db:"quality_score"` // 质量分数 0-100
+	IsNoise      *bool    `json:"is_noise,omitempty" db:"is_noise"`           // 是否噪声
+	FilterReason *string  `json:"filter_reason,omitempty" db:"filter_reason"` // 过滤原因
+	CustomerTier *string  `json:"customer_tier,omitempty" db:"customer_tier"` // 客户等级 S/A/B/C
+	SignalType   *string  `json:"signal_type,omitempty" db:"signal_type"`     // 信号类型
+	PainScore    *float64 `json:"pain_score,omitempty" db:"pain_score"`       // 痛点评分 0-100
 }
 
 // IntelStatus 情报处理状态

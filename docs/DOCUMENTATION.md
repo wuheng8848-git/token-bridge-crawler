@@ -88,9 +88,12 @@ docs/
 
 ```
 根目录/
-├── index.md           # 项目总览（AI/人类入口）
 ├── README.md          # 快速开始
 └── CHANGELOG.md       # 版本更新记录（链接到 docs/progress/）
+
+docs/
+├── index.md           # 项目总览（AI/人类入口）
+└── ...
 ```
 
 ### 2.4 命名规则
@@ -266,7 +269,7 @@ docs/
 
 一句话定位。
 
-> 快速入口：新成员请先阅读 [index.md](./index.md)。
+> 快速入口：新成员请先阅读 [docs/index.md](./docs/index.md)。
 
 ---
 
@@ -296,7 +299,7 @@ docs/
 
 | 文档 | 内容 |
 |------|------|
-| [index.md](./index.md) | 项目总览 |
+| [docs/index.md](./docs/index.md) | 项目总览 |
 | ... | ... |
 
 ---
@@ -585,8 +588,8 @@ SELECT * FROM intelligence_items LIMIT 10;
 
 ```markdown
 # 内部链接（相对路径）
-[index.md](./index.md)
-[docs/05-api.md](./docs/05-api.md)
+[docs/index.md](./docs/index.md)
+[docs/05-api.md](./docs/architecture/05-api.md)
 
 # 外部链接
 [Keep a Changelog](https://keepachangelog.com/)
@@ -692,8 +695,8 @@ SELECT * FROM intelligence_items LIMIT 10;
 
 ```bash
 # 检查必需文档是否存在
-ls index.md README.md CHANGELOG.md
-ls docs/00-quick-reference.md docs/01-overview.md docs/02-architecture.md
+ls README.md CHANGELOG.md
+ls docs/index.md docs/00-quick-reference.md docs/product/00-product-charter.md
 ```
 
 ### 7.2 链接检查

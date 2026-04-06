@@ -9,10 +9,39 @@ import (
 	"token-bridge-crawler/internal/core"
 )
 
+// TranslationStrategy 翻译策略配置
+type TranslationStrategy struct {
+	// 质量分数阈值，只有达到阈值的情报才会被翻译
+	MinQualityScore float64
+	// 是否只翻译高价值信号（S级和A级）
+	HighValueOnly bool
+	// 最大翻译条数（每批），0表示不限制
+	MaxItemsPerBatch int
+}
+
+// DefaultTranslationStrategy 默认翻译策略
+func DefaultTranslationStrategy() TranslationStrategy {
+	return TranslationStrategy{
+		MinQualityScore:  40, // 只翻译质量分≥40的（B级及以上）
+		HighValueOnly:    false,
+		MaxItemsPerBatch: 50, // 每批最多翻译50条
+	}
+}
+
+// ConservativeTranslationStrategy 保守翻译策略（省API额度）
+func ConservativeTranslationStrategy() TranslationStrategy {
+	return TranslationStrategy{
+		MinQualityScore:  60, // 只翻译质量分≥60的（A级及以上）
+		HighValueOnly:    true,
+		MaxItemsPerBatch: 20, // 每批最多翻译20条
+	}
+}
+
 // TranslatedStorage 带翻译功能的存储
 type TranslatedStorage struct {
 	base       IntelligenceStorage
 	translator core.TranslationService
+	strategy   TranslationStrategy
 }
 
 // NewTranslatedStorage 创建带翻译功能的存储
@@ -20,7 +49,49 @@ func NewTranslatedStorage(base IntelligenceStorage, translator core.TranslationS
 	return &TranslatedStorage{
 		base:       base,
 		translator: translator,
+		strategy:   DefaultTranslationStrategy(),
 	}
+}
+
+// NewTranslatedStorageWithStrategy 创建带自定义翻译策略的存储
+func NewTranslatedStorageWithStrategy(base IntelligenceStorage, translator core.TranslationService, strategy TranslationStrategy) *TranslatedStorage {
+	return &TranslatedStorage{
+		base:       base,
+		translator: translator,
+		strategy:   strategy,
+	}
+}
+
+// SetStrategy 设置翻译策略
+func (s *TranslatedStorage) SetStrategy(strategy TranslationStrategy) {
+	s.strategy = strategy
+}
+
+// shouldTranslate 判断情报是否应该被翻译
+func (s *TranslatedStorage) shouldTranslate(item *core.IntelItem) bool {
+	// 如果没有质量分数，使用默认值判断
+	qualityScore := 50.0 // 默认中等质量
+	if item.QualityScore != nil {
+		qualityScore = *item.QualityScore
+	}
+
+	// 检查质量分数是否达到阈值
+	if qualityScore < s.strategy.MinQualityScore {
+		return false
+	}
+
+	// 如果设置了只翻译高价值信号，检查客户等级
+	if s.strategy.HighValueOnly {
+		if item.CustomerTier != nil {
+			tier := *item.CustomerTier
+			// 只翻译 S级 和 A级
+			if tier != "S" && tier != "A" {
+				return false
+			}
+		}
+	}
+
+	return true
 }
 
 // SaveItem 保存单个情报项（自动翻译）
@@ -36,14 +107,34 @@ func (s *TranslatedStorage) SaveItem(ctx context.Context, item *core.IntelItem) 
 
 // SaveItems 批量保存情报项（自动翻译）
 func (s *TranslatedStorage) SaveItems(ctx context.Context, items []core.IntelItem) error {
-	// 先批量翻译
-	if s.translator != nil && len(items) > 0 {
-		log.Printf("[TranslatedStorage] 开始翻译 %d 条情报项", len(items))
-		_ = s.translator.TranslateIntelItems(items)
-		log.Printf("[TranslatedStorage] 翻译完成")
+	// 筛选需要翻译的情报（基于质量分数和客户等级）
+	var itemsToTranslate []core.IntelItem
+	for i := range items {
+		if s.shouldTranslate(&items[i]) {
+			itemsToTranslate = append(itemsToTranslate, items[i])
+		}
 	}
 
-	// 再保存
+	// 限制每批翻译数量
+	if s.strategy.MaxItemsPerBatch > 0 && len(itemsToTranslate) > s.strategy.MaxItemsPerBatch {
+		log.Printf("[TranslatedStorage] 翻译数量超过限制: %d 条，将只翻译前 %d 条高质量情报",
+			len(itemsToTranslate), s.strategy.MaxItemsPerBatch)
+		itemsToTranslate = itemsToTranslate[:s.strategy.MaxItemsPerBatch]
+	}
+
+	// 批量翻译筛选后的情报
+	if s.translator != nil && len(itemsToTranslate) > 0 {
+		log.Printf("[TranslatedStorage] 开始翻译 %d/%d 条高质量情报项 (质量分≥%.0f)",
+			len(itemsToTranslate), len(items), s.strategy.MinQualityScore)
+		_ = s.translator.TranslateIntelItems(itemsToTranslate)
+		log.Printf("[TranslatedStorage] 翻译完成，跳过 %d 条低价值情报",
+			len(items)-len(itemsToTranslate))
+	} else {
+		log.Printf("[TranslatedStorage] 跳过翻译: %d 条情报质量分低于 %.0f，不消耗API额度",
+			len(items), s.strategy.MinQualityScore)
+	}
+
+	// 保存所有情报（无论是否翻译）
 	return s.base.SaveItems(ctx, items)
 }
 

@@ -37,7 +37,7 @@ services:
     environment:
       # 数据库连接
       CRAWLER_DATABASE_URL: postgres://${DB_USER:-tbuser}:${DB_PASSWORD:-tbpassword}@postgres:5432/${DB_NAME:-tokenbridge}?sslmode=disable
-      
+
       # 翻译服务配置（可选）
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       BAIDU_APP_ID: ${BAIDU_APP_ID:-}
@@ -45,22 +45,27 @@ services:
       BAIDU_APP_SECRET: ${BAIDU_APP_SECRET:-}
       VOLCENGINE_ACCESS_KEY_ID: ${VOLCENGINE_ACCESS_KEY_ID:-}
       VOLCENGINE_SECRET_ACCESS_KEY: ${VOLCENGINE_SECRET_ACCESS_KEY:-}
-      
+
+      # Tavily 搜索配置（可选，推荐）
+      TAVILY_API_KEY: ${TAVILY_API_KEY:-}
+
       # AI日报配置（可选）
       CRAWLER_AI_API_KEY: ${CRAWLER_AI_API_KEY:-}
-      
+
       # 邮件配置（可选）
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASS: ${SMTP_PASS:-}
-      
+
       # 时区
       TZ: Asia/Shanghai
     volumes:
       - ./config.yaml:/root/config.yaml:ro
       - ./logs:/root/logs  # 日志持久化
+    ports:
+      - "127.0.0.1:8081:8081"  # API 端口（仅本地访问，通过 Nginx 反向代理）
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/healthz"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8081/healthz"]
       interval: 30s
       timeout: 10s
       retries: 3

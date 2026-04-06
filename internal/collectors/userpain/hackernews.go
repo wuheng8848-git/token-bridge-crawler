@@ -10,25 +10,28 @@ import (
 	"time"
 
 	"token-bridge-crawler/internal/core"
+	"token-bridge-crawler/internal/httpclient"
 )
 
 // HackerNewsCollector HackerNews用户痛点采集器
 type HackerNewsCollector struct {
 	*BaseUserPainCollector
-	client *http.Client
+	client *httpclient.Client
 }
 
 // NewHackerNewsCollector 创建HackerNews采集器
 func NewHackerNewsCollector() *HackerNewsCollector {
+	// 使用预设的 HackerNews 配置
+	httpClient := httpclient.NewClientWithPreset("hackernews")
+
 	return &HackerNewsCollector{
-		BaseUserPainCollector: NewBaseUserPainCollector(
+		BaseUserPainCollector: NewBaseUserPainCollectorWithHTTP(
 			"hackernews_pain",
 			"hackernews",
 			6*time.Hour,
+			httpClient,
 		),
-		client: &http.Client{
-			Timeout: 30 * time.Second,
-		},
+		client: httpClient,
 	}
 }
 
@@ -52,7 +55,7 @@ func (c *HackerNewsCollector) CollectUserPains(ctx context.Context) ([]core.Inte
 			continue
 		}
 		items = append(items, searchItems...)
-		time.Sleep(1 * time.Second) // 避免请求过快
+		// 速率限制已由 httpclient 自动处理，无需手动 Sleep
 	}
 
 	return items, nil
