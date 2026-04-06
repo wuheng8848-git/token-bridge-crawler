@@ -223,9 +223,9 @@ func (c *DiscordCollector) extractReactions(reactions []*discordgo.MessageReacti
 	result := make([]map[string]interface{}, len(reactions))
 	for i, r := range reactions {
 		result[i] = map[string]interface{}{
-			"emoji":    r.Emoji.Name,
-			"count":    r.Count,
-			"me":       r.Me,
+			"emoji": r.Emoji.Name,
+			"count": r.Count,
+			"me":    r.Me,
 		}
 	}
 	return result

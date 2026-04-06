@@ -10,7 +10,7 @@ import (
 )
 
 // ConfigFrictionDetector 配置摩擦信号检测器
-type ConfigFrictionDetector struct {}
+type ConfigFrictionDetector struct{}
 
 // NewConfigFrictionDetector 创建配置摩擦信号检测器
 func NewConfigFrictionDetector() *ConfigFrictionDetector {
@@ -72,20 +72,20 @@ func (d *ConfigFrictionDetector) DetectFromIntel(item core.IntelItem) ([]types.C
 		}
 
 		signal := types.CustomerSignal{
-			ID:        generateSignalID(),
-			Type:      types.SignalTypeConfigFriction,
-			Strength:  strength,
-			Content:   item.Title,
-			Platform:  platform,
-			Author:    author,
-			URL:       item.URL,
+			ID:       generateSignalID(),
+			Type:     types.SignalTypeConfigFriction,
+			Strength: strength,
+			Content:  item.Title,
+			Platform: platform,
+			Author:   author,
+			URL:      item.URL,
 			Metadata: map[string]interface{}{
 				"found_keywords": foundKeywords,
 				"intel_type":     item.IntelType,
 				"source":         item.Source,
 			},
-			DetectedAt:    time.Now().UTC(),
-			RelatedIntel:  item.ID,
+			DetectedAt:   time.Now().UTC(),
+			RelatedIntel: item.ID,
 		}
 
 		signals = append(signals, signal)

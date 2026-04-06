@@ -11,20 +11,21 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/PuerkitoBio/goquery"
 	"token-bridge-crawler/internal/core"
+
+	"github.com/PuerkitoBio/goquery"
 )
 
 // PriceCollector 价格采集器基类
 type PriceCollector struct {
 	core.BaseCollector
 
-	vendor       string
-	displayName  string
-	config       PriceCollectorConfig
+	vendor      string
+	displayName string
+	config      PriceCollectorConfig
 
 	// 多策略抓取函数
-	strategies   []core.FetchStrategy
+	strategies []core.FetchStrategy
 
 	// fallback 价格数据（子类设置）
 	fallbackPrices []PriceData
@@ -32,10 +33,10 @@ type PriceCollector struct {
 
 // PriceCollectorConfig 价格采集器配置
 type PriceCollectorConfig struct {
-	WebURL       string
-	APIURL       string
-	StaticFile   string
-	RateLimit    time.Duration
+	WebURL     string
+	APIURL     string
+	StaticFile string
+	RateLimit  time.Duration
 }
 
 // PriceData 价格数据
@@ -63,10 +64,10 @@ func NewPriceCollector(vendor, displayName string, config PriceCollectorConfig) 
 		displayName: displayName,
 		config:      config,
 	}
-	
+
 	// 初始化策略链
 	pc.initStrategies()
-	
+
 	return pc
 }
 
@@ -156,32 +157,32 @@ func (pc *PriceCollector) SetFallbackPrices(prices []PriceData) {
 func (pc *PriceCollector) pricesToIntelItems(prices []PriceData) []core.IntelItem {
 	var items []core.IntelItem
 	now := time.Now().UTC()
-	
+
 	for _, price := range prices {
 		item := core.NewIntelItem(core.IntelTypePrice, pc.vendor)
 		item.SourceID = fmt.Sprintf("%s-%s-%s", pc.vendor, price.ModelCode, now.Format("20060102"))
 		item.Title = fmt.Sprintf("%s - %s", pc.displayName, price.ModelName)
-		item.Content = fmt.Sprintf("Input: $%.2f/million, Output: $%.2f/million", 
+		item.Content = fmt.Sprintf("Input: $%.2f/million, Output: $%.2f/million",
 			price.InputPrice, price.OutputPrice)
 		item.CapturedAt = now
-		
+
 		// 设置元数据
 		item.Metadata = core.Metadata{
-			"model_code":             price.ModelCode,
-			"model_name":             price.ModelName,
-			"input_price":            price.InputPrice,
-			"output_price":           price.OutputPrice,
-			"currency":               price.Currency,
-			"price_type":             "vendor_list_price",
-			"schema_version":         "v1",
-			"change_type":            price.ChangeType,
-			"previous_input_price":   price.PreviousInputPrice,
-			"previous_output_price":  price.PreviousOutputPrice,
+			"model_code":            price.ModelCode,
+			"model_name":            price.ModelName,
+			"input_price":           price.InputPrice,
+			"output_price":          price.OutputPrice,
+			"currency":              price.Currency,
+			"price_type":            "vendor_list_price",
+			"schema_version":        "v1",
+			"change_type":           price.ChangeType,
+			"previous_input_price":  price.PreviousInputPrice,
+			"previous_output_price": price.PreviousOutputPrice,
 		}
-		
+
 		items = append(items, item)
 	}
-	
+
 	return items
 }
 
@@ -190,38 +191,38 @@ func (pc *PriceCollector) Validate(items []core.IntelItem) error {
 	if len(items) == 0 {
 		return nil
 	}
-	
+
 	var errors []string
-	
+
 	for i, item := range items {
 		// 检查必填字段
 		if item.Source == "" {
 			errors = append(errors, fmt.Sprintf("item %d: source is empty", i))
 		}
-		
+
 		// 检查价格合理性
 		if price, ok := item.Metadata["input_price"].(float64); ok {
 			if price < 0 || price > 1000 {
 				errors = append(errors, fmt.Sprintf("item %d: input_price %.2f seems unreasonable", i, price))
 			}
 		}
-		
+
 		if price, ok := item.Metadata["output_price"].(float64); ok {
 			if price < 0 || price > 1000 {
 				errors = append(errors, fmt.Sprintf("item %d: output_price %.2f seems unreasonable", i, price))
 			}
 		}
-		
+
 		// 检查模型代码
 		if modelCode, ok := item.Metadata["model_code"].(string); !ok || modelCode == "" {
 			errors = append(errors, fmt.Sprintf("item %d: model_code is empty", i))
 		}
 	}
-	
+
 	if len(errors) > 0 {
 		return fmt.Errorf("validation failed: %v", errors)
 	}
-	
+
 	return nil
 }
 
@@ -233,7 +234,7 @@ func (pc *PriceCollector) HealthCheck() (string, error) {
 			return "healthy", nil
 		}
 	}
-	
+
 	// 检查网页可访问性
 	if pc.config.WebURL != "" {
 		client := &http.Client{Timeout: 5 * time.Second}
@@ -242,12 +243,12 @@ func (pc *PriceCollector) HealthCheck() (string, error) {
 			return "degraded", fmt.Errorf("web url not accessible: %w", err)
 		}
 		defer resp.Body.Close()
-		
+
 		if resp.StatusCode == 200 {
 			return "healthy", nil
 		}
 	}
-	
+
 	return "unhealthy", fmt.Errorf("no available data source")
 }
 
@@ -261,32 +262,32 @@ func fetchWebPage(url string) (*goquery.Document, error) {
 	client := &http.Client{
 		Timeout: 30 * time.Second,
 	}
-	
+
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// 设置请求头，模拟浏览器
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
 	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
 	req.Header.Set("Accept-Language", "en-US,en;q=0.9")
-	
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	
+
 	if resp.StatusCode != 200 {
 		return nil, fmt.Errorf("status code: %d", resp.StatusCode)
 	}
-	
+
 	doc, err := goquery.NewDocumentFromReader(resp.Body)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return doc, nil
 }
 
@@ -295,18 +296,18 @@ func (pc *PriceCollector) saveStaticBackup(prices []PriceData) error {
 	if pc.config.StaticFile == "" {
 		return nil
 	}
-	
+
 	// 确保目录存在
 	dir := filepath.Dir(pc.config.StaticFile)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return err
 	}
-	
+
 	data, err := json.MarshalIndent(prices, "", "  ")
 	if err != nil {
 		return err
 	}
-	
+
 	return os.WriteFile(pc.config.StaticFile, data, 0644)
 }
 

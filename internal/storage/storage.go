@@ -7,10 +7,11 @@ import (
 	"fmt"
 	"time"
 
+	"token-bridge-crawler/internal/adapters"
+
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"token-bridge-crawler/internal/adapters"
 )
 
 type Storage interface {

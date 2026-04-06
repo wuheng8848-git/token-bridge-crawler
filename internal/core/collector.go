@@ -11,16 +11,16 @@ import (
 type Collector interface {
 	// Name 返回采集器名称
 	Name() string
-	
+
 	// IntelType 返回采集的情报类型
 	IntelType() IntelType
-	
+
 	// Source 返回数据来源标识
 	Source() string
-	
+
 	// Fetch 执行数据采集
 	Fetch(ctx context.Context) ([]IntelItem, error)
-	
+
 	// RateLimit 返回请求间隔（防封）
 	RateLimit() time.Duration
 }
@@ -28,26 +28,26 @@ type Collector interface {
 // EnhancedCollector 增强版采集器接口（支持多策略、健康检查等）
 type EnhancedCollector interface {
 	Collector
-	
+
 	// FetchWithFallback 带降级策略的采集
 	// 按优先级尝试多种抓取策略，任一成功即返回
 	FetchWithFallback(ctx context.Context) ([]IntelItem, error)
-	
+
 	// Validate 验证采集数据的合理性
 	Validate(items []IntelItem) error
-	
+
 	// HealthCheck 健康检查
 	// 返回采集器当前状态："healthy", "degraded", "unhealthy"
 	HealthCheck() (status string, err error)
-	
+
 	// GetStrategies 获取支持的抓取策略列表
 	GetStrategies() []FetchStrategy
 }
 
 // FetchStrategy 抓取策略
 type FetchStrategy struct {
-	Name     string                // 策略名称："web", "api", "static"
-	Priority int                   // 优先级，数字越小优先级越高
+	Name     string                                         // 策略名称："web", "api", "static"
+	Priority int                                            // 优先级，数字越小优先级越高
 	Fetch    func(ctx context.Context) ([]IntelItem, error) // 执行函数
 }
 
@@ -162,15 +162,15 @@ func (cr *CollectorRegistry) List() []Collector {
 
 // CollectorMetrics 采集器指标
 type CollectorMetrics struct {
-	CollectorName   string
-	TotalRuns       int64
-	SuccessRuns     int64
-	FailedRuns      int64
-	LastRunAt       *time.Time
-	LastSuccessAt   *time.Time
-	LastError       string
-	LastErrorAt     *time.Time
-	AvgFetchTime    time.Duration
+	CollectorName    string
+	TotalRuns        int64
+	SuccessRuns      int64
+	FailedRuns       int64
+	LastRunAt        *time.Time
+	LastSuccessAt    *time.Time
+	LastError        string
+	LastErrorAt      *time.Time
+	AvgFetchTime     time.Duration
 	DataQualityScore float64 // 0-100
 }
 
@@ -191,17 +191,17 @@ func NewMetricsCollector() *MetricsCollector {
 func (mc *MetricsCollector) RecordRun(collectorName string, success bool, duration time.Duration, err error) {
 	mc.mu.Lock()
 	defer mc.mu.Unlock()
-	
+
 	m, ok := mc.metrics[collectorName]
 	if !ok {
 		m = &CollectorMetrics{CollectorName: collectorName}
 		mc.metrics[collectorName] = m
 	}
-	
+
 	m.TotalRuns++
 	now := time.Now().UTC()
 	m.LastRunAt = &now
-	
+
 	if success {
 		m.SuccessRuns++
 		m.LastSuccessAt = &now
@@ -212,7 +212,7 @@ func (mc *MetricsCollector) RecordRun(collectorName string, success bool, durati
 		}
 		m.LastErrorAt = &now
 	}
-	
+
 	// 计算平均耗时（简单移动平均）
 	if m.AvgFetchTime == 0 {
 		m.AvgFetchTime = duration

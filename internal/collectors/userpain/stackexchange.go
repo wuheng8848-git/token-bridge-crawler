@@ -38,14 +38,18 @@ func NewStackExchangeCollector() *StackExchangeCollector {
 			"chatgpt",
 			"llm",
 			"anthropic-claude",
+			"gemini",
+			"langchain",
 		},
 		questions: []string{
-			"API pricing expensive",
-			"API cost too high",
-			"rate limit exceeded",
-			"API billing unexpected",
-			"OpenAI alternative",
-			"Claude vs OpenAI cost",
+			"OpenAI API pricing expensive",
+			"ChatGPT API cost too high",
+			"OpenAI billing unexpected charges",
+			"Claude API vs OpenAI cost comparison",
+			"LLM API token cost optimization",
+			"OpenAI API subscription issues",
+			"anthropic claude pricing",
+			"AI API cost optimization",
 		},
 	}
 }
@@ -183,6 +187,11 @@ func (c *StackExchangeCollector) fetchQuestions(ctx context.Context, apiURL, que
 			continue
 		}
 
+		// 过滤：只保留与 AI API 相关的内容
+		if !c.isAIPIRelevant(q.Title, q.Body) {
+			continue
+		}
+
 		item := core.NewIntelItem(core.IntelTypeUserPain, "stackexchange")
 		item.Title = q.Title
 		item.Content = c.stripHTML(q.Body)
@@ -244,6 +253,30 @@ func (c *StackExchangeCollector) detectPainType(text string) string {
 	}
 
 	return "general"
+}
+
+// isAIPIRelevant 检查内容是否与 AI API 相关
+func (c *StackExchangeCollector) isAIPIRelevant(title, body string) bool {
+	text := strings.ToLower(title + " " + body)
+
+	// AI/LLM 相关关键词
+	aiKeywords := []string{
+		"openai", "chatgpt", "gpt-4", "gpt-3.5", "gpt-4o", "o1", "o3",
+		"anthropic", "claude", "claude-3", "claude-4",
+		"gemini", "google ai", "bard",
+		"llm", "large language model",
+		"langchain", "llamaindex",
+		"embedding", "token", "completion",
+		"azure openai", "bedrock",
+		"artificial intelligence api",
+	}
+
+	for _, keyword := range aiKeywords {
+		if strings.Contains(text, keyword) {
+			return true
+		}
+	}
+	return false
 }
 
 // stripHTML 移除 HTML 标签

@@ -8,7 +8,7 @@ import (
 )
 
 // ToolActionGenerator 工具碎片化动作生成器
-type ToolActionGenerator struct {}
+type ToolActionGenerator struct{}
 
 // NewToolActionGenerator 创建工具碎片化动作生成器
 func NewToolActionGenerator() *ToolActionGenerator {
@@ -70,25 +70,25 @@ func (g *ToolActionGenerator) generateShortResponse(signal types.QualifiedSignal
 	content := "【内部动作建议】工具碎片化信号响应：用户在管理多个AI工具时遇到困难，建议提供Token Bridge的统一接口解决方案，简化多模型和多提供商的管理。"
 
 	return types.MarketingAction{
-		ID:          generateActionID(),
-		Type:        types.ActionTypeInternalNote,
-		Channel:     types.ChannelInternal,
-		Title:       "工具碎片化信号响应建议",
-		Content:     content,
+		ID:             generateActionID(),
+		Type:           types.ActionTypeInternalNote,
+		Channel:        types.ChannelInternal,
+		Title:          "工具碎片化信号响应建议",
+		Content:        content,
 		TargetAudience: "Developers using multiple AI tools",
-		Priority:    priority,
-		SignalIDs:   []string{signal.Signal.ID},
+		Priority:       priority,
+		SignalIDs:      []string{signal.Signal.ID},
 		Metadata: map[string]interface{}{
-			"signal_type": signal.Signal.Type,
+			"signal_type":     signal.Signal.Type,
 			"signal_strength": signal.Signal.Strength,
-			"platform": signal.Signal.Platform,
+			"platform":        signal.Signal.Platform,
 			"qualified_score": signal.Score,
-			"customer_stage": signal.CustomerStage,
+			"customer_stage":  signal.CustomerStage,
 		},
-		CreatedAt:   time.Now().UTC(),
-		Status:      "draft",
-		AutoExecute: false,
-		CustomerStage: signal.CustomerStage,
+		CreatedAt:      time.Now().UTC(),
+		Status:         "draft",
+		AutoExecute:    false,
+		CustomerStage:  signal.CustomerStage,
 		QualifiedScore: signal.Score,
 	}
 }
@@ -111,25 +111,25 @@ func (g *ToolActionGenerator) generateTechnicalPost(signal types.QualifiedSignal
 推荐发布渠道：技术博客、GitHub文档、开发者社区`
 
 	return types.MarketingAction{
-		ID:          generateActionID(),
-		Type:        types.ActionTypeStrategy,
-		Channel:     types.ChannelInternal,
-		Title:       title,
-		Content:     content,
+		ID:             generateActionID(),
+		Type:           types.ActionTypeStrategy,
+		Channel:        types.ChannelInternal,
+		Title:          title,
+		Content:        content,
 		TargetAudience: "Developers managing multiple AI tools",
-		Priority:    priority,
-		SignalIDs:   []string{signal.Signal.ID},
+		Priority:       priority,
+		SignalIDs:      []string{signal.Signal.ID},
 		Metadata: map[string]interface{}{
-			"signal_type": signal.Signal.Type,
+			"signal_type":     signal.Signal.Type,
 			"signal_strength": signal.Signal.Strength,
-			"platform": signal.Signal.Platform,
+			"platform":        signal.Signal.Platform,
 			"qualified_score": signal.Score,
-			"customer_stage": signal.CustomerStage,
+			"customer_stage":  signal.CustomerStage,
 		},
-		CreatedAt:   time.Now().UTC(),
-		Status:      "draft",
-		AutoExecute: false,
-		CustomerStage: signal.CustomerStage,
+		CreatedAt:      time.Now().UTC(),
+		Status:         "draft",
+		AutoExecute:    false,
+		CustomerStage:  signal.CustomerStage,
 		QualifiedScore: signal.Score,
 	}
 }

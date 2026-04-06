@@ -140,21 +140,21 @@ func (c *DevToCollector) fetchArticles(ctx context.Context, apiURL, queryContext
 
 	// Dev.to 文章结构
 	var articles []struct {
-		ID          int    `json:"id"`
-		Title       string `json:"title"`
-		Description string `json:"description"`
-		URL         string `json:"url"`
-		Slug        string `json:"slug"`
+		ID          int      `json:"id"`
+		Title       string   `json:"title"`
+		Description string   `json:"description"`
+		URL         string   `json:"url"`
+		Slug        string   `json:"slug"`
 		Tags        []string `json:"tag_list"`
 		User        struct {
-			Name      string `json:"name"`
-			Username  string `json:"username"`
+			Name     string `json:"name"`
+			Username string `json:"username"`
 		} `json:"user"`
-		PublicReactionsCount int       `json:"public_reactions_count"`
-		PositiveReactionsCount int     `json:"positive_reactions_count"`
-		CommentsCount        int       `json:"comments_count"`
-		ReadingTime         int       `json:"reading_time"`
-		PublishedAt         time.Time `json:"published_at"`
+		PublicReactionsCount   int       `json:"public_reactions_count"`
+		PositiveReactionsCount int       `json:"positive_reactions_count"`
+		CommentsCount          int       `json:"comments_count"`
+		ReadingTime            int       `json:"reading_time"`
+		PublishedAt            time.Time `json:"published_at"`
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&articles); err != nil {
@@ -183,15 +183,15 @@ func (c *DevToCollector) fetchArticles(ctx context.Context, apiURL, queryContext
 		painType := c.detectPainType(fullText)
 
 		item.Metadata = core.Metadata{
-			"platform":          "devto",
-			"tags":              article.Tags,
-			"author":            article.User.Name,
-			"author_username":   article.User.Username,
-			"reactions_count":   article.PublicReactionsCount,
-			"comments_count":    article.CommentsCount,
-			"reading_time":      article.ReadingTime,
-			"pain_type":         painType,
-			"query_context":     queryContext,
+			"platform":        "devto",
+			"tags":            article.Tags,
+			"author":          article.User.Name,
+			"author_username": article.User.Username,
+			"reactions_count": article.PublicReactionsCount,
+			"comments_count":  article.CommentsCount,
+			"reading_time":    article.ReadingTime,
+			"pain_type":       painType,
+			"query_context":   queryContext,
 		}
 
 		item.PublishedAt = &article.PublishedAt
@@ -205,7 +205,7 @@ func (c *DevToCollector) fetchArticles(ctx context.Context, apiURL, queryContext
 // isPainPointRelated 检查是否与痛点相关
 func (c *DevToCollector) isPainPointRelated(text string) bool {
 	textLower := strings.ToLower(text)
-	
+
 	painKeywords := []string{
 		"cost", "expensive", "pricing", "billing", "charge",
 		"rate limit", "throttle", "quota",

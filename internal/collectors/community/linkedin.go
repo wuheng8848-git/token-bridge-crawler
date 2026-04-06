@@ -128,14 +128,14 @@ func (c *LinkedInCollector) fetchAIContent(ctx context.Context) ([]core.IntelIte
 
 		// 设置元数据
 		item.Metadata = core.Metadata{
-			"platform":     "linkedin",
-			"author":       content.Author,
-			"company":      content.Company,
-			"likes":        content.Likes,
+			"platform":       "linkedin",
+			"author":         content.Author,
+			"company":        content.Company,
+			"likes":          content.Likes,
 			"comments_count": content.Comments,
-			"shares":       content.Shares,
-			"media_type":   content.MediaType,
-			"content_type": "ai_related",
+			"shares":         content.Shares,
+			"media_type":     content.MediaType,
+			"content_type":   "ai_related",
 		}
 
 		// 解析发布时间
@@ -153,14 +153,14 @@ func (c *LinkedInCollector) fetchAIContent(ctx context.Context) ([]core.IntelIte
 func (c *LinkedInCollector) fetchFounderContent(ctx context.Context) ([]core.IntelItem, error) {
 	// 模拟创始人内容
 	sampleContent := []struct {
-		Founder   string
-		Title     string
-		Content   string
-		Likes     int
-		Comments  int
-		Shares    int
-		URL       string
-		PostDate  string
+		Founder  string
+		Title    string
+		Content  string
+		Likes    int
+		Comments int
+		Shares   int
+		URL      string
+		PostDate string
 	}{{
 		Founder:  "Elon Musk",
 		Title:    "Building the Future of AI Infrastructure",
@@ -191,12 +191,12 @@ func (c *LinkedInCollector) fetchFounderContent(ctx context.Context) ([]core.Int
 
 		// 设置元数据
 		item.Metadata = core.Metadata{
-			"platform":      "linkedin",
-			"founder":       content.Founder,
-			"likes":         content.Likes,
+			"platform":       "linkedin",
+			"founder":        content.Founder,
+			"likes":          content.Likes,
 			"comments_count": content.Comments,
-			"shares":        content.Shares,
-			"content_type":  "founder_insight",
+			"shares":         content.Shares,
+			"content_type":   "founder_insight",
 		}
 
 		// 解析发布时间
@@ -214,32 +214,32 @@ func (c *LinkedInCollector) fetchFounderContent(ctx context.Context) ([]core.Int
 func (c *LinkedInCollector) fetchComplianceContent(ctx context.Context) ([]core.IntelItem, error) {
 	// 模拟跨境合规内容
 	sampleContent := []struct {
-		Title     string
-		Content   string
-		Author    string
-		Company   string
-		Likes     int
-		Comments  int
-		URL       string
-		PostDate  string
+		Title    string
+		Content  string
+		Author   string
+		Company  string
+		Likes    int
+		Comments int
+		URL      string
+		PostDate string
 	}{{
-		Title:     "AI API Compliance in a Global Market",
-		Content:   "Navigating data privacy regulations across different regions is crucial for AI API providers...",
-		Author:    "Legal Expert",
-		Company:   "Global Compliance Solutions",
-		Likes:     120,
-		Comments:  18,
-		URL:       "https://www.linkedin.com/posts/legalexpert_ai-compliance-activity-1234567894",
-		PostDate:  "2026-03-29",
+		Title:    "AI API Compliance in a Global Market",
+		Content:  "Navigating data privacy regulations across different regions is crucial for AI API providers...",
+		Author:   "Legal Expert",
+		Company:  "Global Compliance Solutions",
+		Likes:    120,
+		Comments: 18,
+		URL:      "https://www.linkedin.com/posts/legalexpert_ai-compliance-activity-1234567894",
+		PostDate: "2026-03-29",
 	}, {
-		Title:     "Token Bridge's Approach to Cross-Border AI Compliance",
-		Content:   "How Token Bridge ensures compliance with GDPR, CCPA, and other regional regulations...",
-		Author:    "Legal Team",
-		Company:   "Token Bridge",
-		Likes:     89,
-		Comments:  12,
-		URL:       "https://www.linkedin.com/posts/legalteam_token-bridge-compliance-activity-1234567895",
-		PostDate:  "2026-03-27",
+		Title:    "Token Bridge's Approach to Cross-Border AI Compliance",
+		Content:  "How Token Bridge ensures compliance with GDPR, CCPA, and other regional regulations...",
+		Author:   "Legal Team",
+		Company:  "Token Bridge",
+		Likes:    89,
+		Comments: 12,
+		URL:      "https://www.linkedin.com/posts/legalteam_token-bridge-compliance-activity-1234567895",
+		PostDate: "2026-03-27",
 	}}
 
 	var items []core.IntelItem

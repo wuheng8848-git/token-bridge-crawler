@@ -10,7 +10,7 @@ import (
 )
 
 // GovernanceStartDetector 治理起点信号检测器
-type GovernanceStartDetector struct {}
+type GovernanceStartDetector struct{}
 
 // NewGovernanceStartDetector 创建治理起点信号检测器
 func NewGovernanceStartDetector() *GovernanceStartDetector {
@@ -73,20 +73,20 @@ func (d *GovernanceStartDetector) DetectFromIntel(item core.IntelItem) ([]types.
 		}
 
 		signal := types.CustomerSignal{
-			ID:        generateSignalID(),
-			Type:      types.SignalTypeGovernanceStart,
-			Strength:  strength,
-			Content:   item.Title,
-			Platform:  platform,
-			Author:    author,
-			URL:       item.URL,
+			ID:       generateSignalID(),
+			Type:     types.SignalTypeGovernanceStart,
+			Strength: strength,
+			Content:  item.Title,
+			Platform: platform,
+			Author:   author,
+			URL:      item.URL,
 			Metadata: map[string]interface{}{
 				"found_keywords": foundKeywords,
 				"intel_type":     item.IntelType,
 				"source":         item.Source,
 			},
-			DetectedAt:    time.Now().UTC(),
-			RelatedIntel:  item.ID,
+			DetectedAt:   time.Now().UTC(),
+			RelatedIntel: item.ID,
 		}
 
 		signals = append(signals, signal)

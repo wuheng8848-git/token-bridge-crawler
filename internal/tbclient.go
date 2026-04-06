@@ -32,11 +32,11 @@ func NewTBClient(baseURL, token string) *TBClient {
 
 // StagingImportBody 主项目 POST /v1/admin/supplier_catalog_staging/import 期望的顶层结构
 type StagingImportBody struct {
-	Source                string               `json:"source"`
-	CanonicalSupplierCode *string              `json:"canonical_supplier_code,omitempty"`
-	ExternalBatchID       *string              `json:"external_batch_id,omitempty"`
-	DefaultPricingRule    *string              `json:"default_pricing_rule_template,omitempty"`
-	Items                 []StagingImportItem  `json:"items"`
+	Source                string              `json:"source"`
+	CanonicalSupplierCode *string             `json:"canonical_supplier_code,omitempty"`
+	ExternalBatchID       *string             `json:"external_batch_id,omitempty"`
+	DefaultPricingRule    *string             `json:"default_pricing_rule_template,omitempty"`
+	Items                 []StagingImportItem `json:"items"`
 }
 
 // StagingImportItem Staging 导入项（嵌套在 items 数组内）

@@ -38,12 +38,12 @@ func (c *HackerNewsCollector) CollectUserPains(ctx context.Context) ([]core.Inte
 
 	// 搜索与AI API相关的痛点关键词
 	keywords := []string{
-		"OpenAI API cost",
-		"API pricing too expensive",
-		"LLM API bill shock",
-		"switching LLM provider",
-		"API rate limit",
-		" Claude API alternative",
+		"OpenAI API pricing cost",
+		"ChatGPT API expensive",
+		"LLM API billing charges",
+		"switching LLM provider cost",
+		"Claude API vs OpenAI pricing",
+		"AI API token costs",
 	}
 
 	for _, keyword := range keywords {

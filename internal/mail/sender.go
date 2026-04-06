@@ -150,7 +150,7 @@ func (s *Sender) buildCSV(details []storage.VendorPriceDetail) []byte {
 	var buf bytes.Buffer
 	writer := csv.NewWriter(&buf)
 
-	writer.Write([]string{"Model Code", "Input ($/M)", "Output ($/M)", "Change Type", "Previous Output"})
+	_ = writer.Write([]string{"Model Code", "Input ($/M)", "Output ($/M)", "Change Type", "Previous Output"})
 
 	for _, d := range details {
 		prevOutput := ""
@@ -158,7 +158,7 @@ func (s *Sender) buildCSV(details []storage.VendorPriceDetail) []byte {
 			prevOutput = string(d.PrevPrice)
 		}
 
-		writer.Write([]string{
+		_ = writer.Write([]string{
 			d.ModelCode,
 			fmt.Sprintf("%.6f", d.InputUSDPerMillion),
 			fmt.Sprintf("%.6f", d.OutputUSDPerMillion),

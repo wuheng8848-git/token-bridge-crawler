@@ -10,7 +10,7 @@ import (
 )
 
 // MigrationIntentDetector 迁移意愿信号检测器
-type MigrationIntentDetector struct {}
+type MigrationIntentDetector struct{}
 
 // NewMigrationIntentDetector 创建迁移意愿信号检测器
 func NewMigrationIntentDetector() *MigrationIntentDetector {
@@ -84,21 +84,21 @@ func (d *MigrationIntentDetector) DetectFromIntel(item core.IntelItem) ([]types.
 		}
 
 		signal := types.CustomerSignal{
-			ID:        generateSignalID(),
-			Type:      types.SignalTypeMigrationIntent,
-			Strength:  strength,
-			Content:   item.Title,
-			Platform:  platform,
-			Author:    author,
-			URL:       item.URL,
+			ID:       generateSignalID(),
+			Type:     types.SignalTypeMigrationIntent,
+			Strength: strength,
+			Content:  item.Title,
+			Platform: platform,
+			Author:   author,
+			URL:      item.URL,
 			Metadata: map[string]interface{}{
-				"found_competitors":      foundCompetitors,
+				"found_competitors":        foundCompetitors,
 				"found_migration_keywords": foundMigrationKeywords,
-				"intel_type":            item.IntelType,
-				"source":                item.Source,
+				"intel_type":               item.IntelType,
+				"source":                   item.Source,
 			},
-			DetectedAt:    time.Now().UTC(),
-			RelatedIntel:  item.ID,
+			DetectedAt:   time.Now().UTC(),
+			RelatedIntel: item.ID,
 		}
 
 		signals = append(signals, signal)

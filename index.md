@@ -125,19 +125,42 @@ Status: draft
 
 ## 六、文档索引
 
+### 产品文档
+
+| 文档 | 内容 | 优先级 |
+|------|------|--------|
+| [docs/product/00-product-charter.md](./docs/product/00-product-charter.md) | ⭐ **产品总纲**（必读） | ⭐⭐⭐ |
+| [docs/product/01-overview.md](./docs/product/01-overview.md) | 产品概述、定位 | ⭐⭐⭐ |
+
+### 技术架构
+
+| 文档 | 内容 | 优先级 |
+|------|------|--------|
+| [docs/architecture/01-system-design.md](./docs/architecture/01-system-design.md) | 系统架构设计 | ⭐⭐ |
+| [docs/architecture/02-data-model.md](./docs/architecture/02-data-model.md) | 数据模型、信号检测规则 | ⭐⭐ |
+| [docs/architecture/05-api.md](./docs/architecture/05-api.md) | API 接口规范 + 数据存储现状 | ⭐⭐ |
+
+### 部署实施
+
+| 文档 | 内容 | 优先级 |
+|------|------|--------|
+| [docs/deployment/01-environment.md](./docs/deployment/01-environment.md) | 本地开发环境配置 | ⭐⭐ |
+| [docs/deployment/02-installation.md](./docs/deployment/02-installation.md) | 生产部署 | ⭐ |
+
+### 项目进度
+
+| 文档 | 内容 | 优先级 |
+|------|------|--------|
+| [docs/progress/01-roadmap.md](./docs/progress/01-roadmap.md) | 功能路线图 | ⭐ |
+
+### 其他
+
 | 文档 | 内容 | 优先级 |
 |------|------|--------|
 | [README.md](./README.md) | 快速开始、部署说明 | ⭐⭐⭐ |
 | [CHANGELOG.md](./CHANGELOG.md) | 版本更新记录 | ⭐⭐ |
 | [docs/DOCUMENTATION.md](./docs/DOCUMENTATION.md) | **文档规范** | ⭐⭐ |
 | [docs/00-quick-reference.md](./docs/00-quick-reference.md) | 速查表（命令、配置、查询） | ⭐⭐⭐ |
-| [docs/01-overview.md](./docs/01-overview.md) | 项目概述、定位 | ⭐⭐⭐ |
-| [docs/02-architecture.md](./docs/02-architecture.md) | 架构设计、模块说明 | ⭐⭐ |
-| [docs/03-development.md](./docs/03-development.md) | 本地开发指南 | ⭐⭐ |
-| [docs/04-deployment.md](./docs/04-deployment.md) | 生产部署 | ⭐ |
-| [docs/05-api.md](./docs/05-api.md) | API 接口规范 + **数据存储现状** | ⭐⭐ |
-| [docs/06-roadmap.md](./docs/06-roadmap.md) | 功能路线图 | ⭐ |
-| [docs/07-customer-signal-model.md](./docs/07-customer-signal-model.md) | 信号检测规则 | ⭐⭐ |
 
 ---
 
@@ -195,11 +218,11 @@ go build -o intelligence ./cmd/intelligence
 1. ✅ **本文档** - 了解项目定位
 2. ✅ **[docs/00-quick-reference.md](./docs/00-quick-reference.md)** - 速查表（命令、配置、查询）
 3. ✅ **README.md** - 快速启动
-4. ✅ **docs/02-architecture.md** - 理解架构
-5. ✅ **docs/07-customer-signal-model.md** - 理解营销决策逻辑
+4. ✅ **docs/architecture/01-system-design.md** - 理解架构
+5. ✅ **docs/architecture/02-data-model.md** - 理解营销决策逻辑
 
 ---
 
-**文档维护**：Token Bridge Team  
-**最后更新**：2026-03-31  
+**文档维护**：Token Bridge Team
+**最后更新**：2026-03-31
 **版本**：v2.0

@@ -1,0 +1,77 @@
+# golangci-lint 配置
+# https://golangci-lint.run/usage/configuration/
+
+run:
+  timeout: 5m
+  modules-download-mode: readonly
+
+linters:
+  enable:
+    - gofmt
+    - goimports
+    - govet
+    - errcheck
+    - staticcheck
+    - ineffassign
+    - typecheck
+    - gosimple
+    - misspell
+    - revive
+
+linters-settings:
+  gofmt:
+    simplify: true
+
+  goimports:
+    local-prefixes: token-bridge-crawler
+
+  govet:
+    enable:
+      - asmdecl
+      - assign
+      - atomic
+      - bools
+      - buildtag
+      - cgocall
+      - composites
+      - copylocks
+      - errorsas
+      - httpresponse
+      - loopclosure
+      - lostcancel
+      - nilfunc
+      - printf
+      - shift
+      - stdmethods
+      - structtag
+      - tests
+      - unmarshal
+      - unreachable
+      - unsafeptr
+      - unusedresult
+
+  revive:
+    rules:
+      - name: var-naming
+      - name: comment-spacings
+      - name: package-comments
+
+  goconst:
+    min-len: 3
+    min-occurrences: 3
+
+  misspell:
+    locale: US
+
+issues:
+  exclude-dirs:
+    - deploy/migrations
+
+  exclude-rules:
+    # 采集器中的预留方法
+    - path: internal/collectors/apidoc/
+      linters:
+        - unused
+
+  max-issues-per-linter: 50
+  max-same-issues: 10

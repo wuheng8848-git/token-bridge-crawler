@@ -54,6 +54,12 @@ func (s *Server) Start() {
 	// 情报统计
 	mux.HandleFunc("/api/v1/stats/intelligence", s.handleIntelligenceStats)
 
+	// 采集器产出统计
+	mux.HandleFunc("/api/v1/stats/collectors", s.handleCollectorStats)
+
+	// 采集器质量分析
+	mux.HandleFunc("/api/v1/stats/quality", s.handleQualityAnalysis)
+
 	// 信号统计
 	mux.HandleFunc("/api/v1/stats/signals", s.handleSignalStats)
 
@@ -157,6 +163,78 @@ func (s *Server) handleIntelligenceStats(w http.ResponseWriter, r *http.Request)
 	})
 }
 
+// handleCollectorStats 采集器产出统计
+func (s *Server) handleCollectorStats(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+
+	// 获取每个来源的情报数量
+	sourceStats, err := s.storage.GetSourceStats(ctx)
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// 获取最近24小时的采集统计
+	endTime := time.Now().UTC()
+	startTime := endTime.Add(-24 * time.Hour)
+	recentStats, err := s.storage.GetSourceStats(ctx, startTime, endTime)
+	if err != nil {
+		recentStats = make(map[string]int64)
+	}
+
+	// 获取翻译覆盖率
+	translationStats, err := s.storage.GetTranslationStats(ctx)
+	if err != nil {
+		translationStats = map[string]int64{"translated": 0, "total": 0}
+	}
+
+	// 组装采集器数据
+	collectors := s.registry.List()
+	collectorStats := make([]map[string]interface{}, 0, len(collectors))
+
+	for _, c := range collectors {
+		source := c.Source()
+		totalCount := sourceStats[source]
+		recentCount := recentStats[source]
+
+		collectorStats = append(collectorStats, map[string]interface{}{
+			"name":       c.Name(),
+			"type":       string(c.IntelType()),
+			"source":     source,
+			"totalItems": totalCount,
+			"recent24h":  recentCount,
+			"status":     "active",
+		})
+	}
+
+	s.writeJSON(w, http.StatusOK, map[string]interface{}{
+		"collectors":       collectorStats,
+		"totalSources":     len(sourceStats),
+		"translationStats": translationStats,
+		"updatedAt":        time.Now().UTC().Format(time.RFC3339),
+	})
+}
+
+// handleQualityAnalysis 采集器质量分析
+func (s *Server) handleQualityAnalysis(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	defer cancel()
+
+	// 获取查询参数
+	source := r.URL.Query().Get("source")
+	limit := parseInt(r.URL.Query().Get("limit"), 100)
+
+	// 获取质量分析数据
+	qualityData, err := s.storage.GetQualityAnalysis(ctx, source, limit)
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	s.writeJSON(w, http.StatusOK, qualityData)
+}
+
 // handleSignalStats 信号统计（简化版，从数据库直接查询）
 func (s *Server) handleSignalStats(w http.ResponseWriter, r *http.Request) {
 	// 暂时返回模拟数据，后续可以实现真实查询
@@ -196,7 +274,7 @@ func (s *Server) handleCollectorRuns(w http.ResponseWriter, r *http.Request) {
 func (s *Server) writeJSON(w http.ResponseWriter, status int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(data)
+	_ = json.NewEncoder(w).Encode(data)
 }
 
 // writeError 写入错误响应
@@ -281,6 +359,13 @@ func (s *Server) handleIntelligence(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// 获取符合条件的总记录数
+	totalCount, err := s.storage.GetItemsCount(ctx, filter)
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
 	// 转换为响应格式
 	result := make([]map[string]interface{}, 0, len(items))
 	for _, item := range items {
@@ -299,7 +384,7 @@ func (s *Server) handleIntelligence(w http.ResponseWriter, r *http.Request) {
 
 	s.writeJSON(w, http.StatusOK, map[string]interface{}{
 		"items":   result,
-		"total":   len(result),
+		"total":   totalCount,
 		"page":    page,
 		"perPage": perPage,
 	})

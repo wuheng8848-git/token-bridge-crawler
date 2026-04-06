@@ -70,7 +70,7 @@ func NewDefaultSignalQualifier() SignalQualifier {
 func (q *DefaultSignalQualifier) QualifySignal(signal types.CustomerSignal) (types.QualifiedSignal, error) {
 	// 计算资格分数
 	score := q.calculateScore(signal)
-	
+
 	// 确定资格状态
 	status := types.QualificationStatusQualified
 	if score < 30 {
@@ -78,13 +78,13 @@ func (q *DefaultSignalQualifier) QualifySignal(signal types.CustomerSignal) (typ
 	} else if score < 60 {
 		status = types.QualificationStatusPending
 	}
-	
+
 	// 确定客户阶段
 	stage := q.determineCustomerStage(signal)
-	
+
 	// 生成评估理由
 	reason := q.generateReason(signal, score, stage)
-	
+
 	return types.QualifiedSignal{
 		Signal:        signal,
 		Status:        status,
@@ -115,7 +115,7 @@ func (q *DefaultSignalQualifier) QualifySignals(signals []types.CustomerSignal) 
 // calculateScore 计算信号分数
 func (q *DefaultSignalQualifier) calculateScore(signal types.CustomerSignal) float64 {
 	score := 0.0
-	
+
 	// 信号类型权重
 	switch signal.Type {
 	case types.SignalTypeCostPressure, types.SignalTypeConfigFriction, types.SignalTypeToolFragmentation:
@@ -125,7 +125,7 @@ func (q *DefaultSignalQualifier) calculateScore(signal types.CustomerSignal) flo
 	case types.SignalTypeGeneralInterest:
 		score += 10
 	}
-	
+
 	// 信号强度权重
 	switch signal.Strength {
 	case types.SignalStrengthHigh:
@@ -135,7 +135,7 @@ func (q *DefaultSignalQualifier) calculateScore(signal types.CustomerSignal) flo
 	case types.SignalStrengthLow:
 		score += 10
 	}
-	
+
 	// 平台权重
 	switch signal.Platform {
 	case "hacker_news", "indie_hackers":
@@ -147,12 +147,12 @@ func (q *DefaultSignalQualifier) calculateScore(signal types.CustomerSignal) flo
 	default:
 		score += 5
 	}
-	
+
 	// 内容质量（简单评估）
 	if len(signal.Content) > 100 {
 		score += 10
 	}
-	
+
 	// 确保分数在 0-100 范围内
 	if score > 100 {
 		score = 100
@@ -160,7 +160,7 @@ func (q *DefaultSignalQualifier) calculateScore(signal types.CustomerSignal) flo
 	if score < 0 {
 		score = 0
 	}
-	
+
 	return score
 }
 
@@ -183,7 +183,7 @@ func (q *DefaultSignalQualifier) determineCustomerStage(signal types.CustomerSig
 // generateReason 生成评估理由
 func (q *DefaultSignalQualifier) generateReason(signal types.CustomerSignal, score float64, stage types.CustomerStage) string {
 	reason := "信号评估理由："
-	
+
 	switch signal.Type {
 	case types.SignalTypeCostPressure:
 		reason += "成本压力信号，表明用户对AI使用成本敏感，"
@@ -198,7 +198,7 @@ func (q *DefaultSignalQualifier) generateReason(signal types.CustomerSignal, sco
 	case types.SignalTypeGeneralInterest:
 		reason += "泛兴趣信号，表明用户对AI技术有一般兴趣，"
 	}
-	
+
 	switch signal.Strength {
 	case types.SignalStrengthHigh:
 		reason += "信号强度高，"
@@ -207,11 +207,11 @@ func (q *DefaultSignalQualifier) generateReason(signal types.CustomerSignal, sco
 	case types.SignalStrengthLow:
 		reason += "信号强度低，"
 	}
-	
+
 	reason += "来自" + signal.Platform + "平台，"
 	reason += "评估分数：" + fmt.Sprintf("%.1f", score) + "，"
 	reason += "客户阶段：" + string(stage)
-	
+
 	return reason
 }
 

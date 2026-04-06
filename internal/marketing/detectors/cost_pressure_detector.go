@@ -11,7 +11,7 @@ import (
 )
 
 // CostPressureDetector 成本压力信号检测器
-type CostPressureDetector struct {}
+type CostPressureDetector struct{}
 
 // NewCostPressureDetector 创建成本压力信号检测器
 func NewCostPressureDetector() *CostPressureDetector {
@@ -51,9 +51,9 @@ func (d *CostPressureDetector) DetectFromIntel(item core.IntelItem) ([]types.Cus
 	// 检查是否有成本相关的正则表达式匹配
 	costRegexes := []*regexp.Regexp{
 		regexp.MustCompile(`\$\d+(\.\d+)?`), // 价格
-		regexp.MustCompile(`\d+\s*\$`),     // 价格
-		regexp.MustCompile(`cost.*\d+`),      // 成本数字
-		regexp.MustCompile(`budget.*\d+`),    // 预算数字
+		regexp.MustCompile(`\d+\s*\$`),      // 价格
+		regexp.MustCompile(`cost.*\d+`),     // 成本数字
+		regexp.MustCompile(`budget.*\d+`),   // 预算数字
 	}
 
 	for _, regex := range costRegexes {
@@ -86,20 +86,20 @@ func (d *CostPressureDetector) DetectFromIntel(item core.IntelItem) ([]types.Cus
 		}
 
 		signal := types.CustomerSignal{
-			ID:        generateSignalID(),
-			Type:      types.SignalTypeCostPressure,
-			Strength:  strength,
-			Content:   item.Title,
-			Platform:  platform,
-			Author:    author,
-			URL:       item.URL,
+			ID:       generateSignalID(),
+			Type:     types.SignalTypeCostPressure,
+			Strength: strength,
+			Content:  item.Title,
+			Platform: platform,
+			Author:   author,
+			URL:      item.URL,
 			Metadata: map[string]interface{}{
 				"found_keywords": foundKeywords,
 				"intel_type":     item.IntelType,
 				"source":         item.Source,
 			},
-			DetectedAt:    time.Now().UTC(),
-			RelatedIntel:  item.ID,
+			DetectedAt:   time.Now().UTC(),
+			RelatedIntel: item.ID,
 		}
 
 		signals = append(signals, signal)

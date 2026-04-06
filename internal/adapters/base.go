@@ -71,19 +71,19 @@ func (e ErrRateLimited) Error() string {
 func normalizeModelCode(name string) string {
 	// 转小写
 	code := strings.ToLower(name)
-	
+
 	// 替换常见分隔符为连字符
 	code = strings.ReplaceAll(code, "/", "-")
 	code = strings.ReplaceAll(code, "_", "-")
 	code = strings.ReplaceAll(code, " ", "-")
-	
+
 	// 移除多余连字符
 	re := regexp.MustCompile(`-+`)
 	code = re.ReplaceAllString(code, "-")
-	
+
 	// 移除首尾连字符
 	code = strings.Trim(code, "-")
-	
+
 	return code
 }
 
@@ -93,19 +93,19 @@ func parsePrice(s string) float64 {
 	if s == "" || s == "-" || s == "N/A" {
 		return 0
 	}
-	
+
 	// 提取数字部分（包括小数点）
 	re := regexp.MustCompile(`[$]?([0-9]*\.?[0-9]+)`)
 	matches := re.FindStringSubmatch(s)
 	if len(matches) < 2 {
 		return 0
 	}
-	
+
 	val, err := strconv.ParseFloat(matches[1], 64)
 	if err != nil {
 		return 0
 	}
-	
+
 	return val
 }
 
@@ -115,13 +115,13 @@ func parsePricePerMillion(s string) float64 {
 	if s == "" {
 		return 0
 	}
-	
+
 	// 提取价格
 	price := parsePrice(s)
 	if price == 0 {
 		return 0
 	}
-	
+
 	// 检测单位
 	lower := strings.ToLower(s)
 	if strings.Contains(lower, "/ 1k") || strings.Contains(lower, "per 1k") {
@@ -132,7 +132,7 @@ func parsePricePerMillion(s string) float64 {
 		// 已经是每 1M
 		return price
 	}
-	
+
 	// 默认假设是每 1M
 	return price
 }

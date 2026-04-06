@@ -8,7 +8,7 @@ import (
 )
 
 // ConfigActionGenerator 配置动作生成器
-type ConfigActionGenerator struct {}
+type ConfigActionGenerator struct{}
 
 // NewConfigActionGenerator 创建配置动作生成器
 func NewConfigActionGenerator() *ConfigActionGenerator {
@@ -70,25 +70,25 @@ func (g *ConfigActionGenerator) generateShortResponse(signal types.QualifiedSign
 	content := "【内部动作建议】配置摩擦信号响应：用户在配置多个AI提供商时遇到困难，建议提供Token Bridge的单API密钥解决方案和简化配置流程。"
 
 	return types.MarketingAction{
-		ID:          generateActionID(),
-		Type:        types.ActionTypeInternalNote,
-		Channel:     types.ChannelInternal,
-		Title:       "配置摩擦信号响应建议",
-		Content:     content,
+		ID:             generateActionID(),
+		Type:           types.ActionTypeInternalNote,
+		Channel:        types.ChannelInternal,
+		Title:          "配置摩擦信号响应建议",
+		Content:        content,
 		TargetAudience: "Developers struggling with setup",
-		Priority:    priority,
-		SignalIDs:   []string{signal.Signal.ID},
+		Priority:       priority,
+		SignalIDs:      []string{signal.Signal.ID},
 		Metadata: map[string]interface{}{
-			"signal_type": signal.Signal.Type,
+			"signal_type":     signal.Signal.Type,
 			"signal_strength": signal.Signal.Strength,
-			"platform": signal.Signal.Platform,
+			"platform":        signal.Signal.Platform,
 			"qualified_score": signal.Score,
-			"customer_stage": signal.CustomerStage,
+			"customer_stage":  signal.CustomerStage,
 		},
-		CreatedAt:   time.Now().UTC(),
-		Status:      "draft",
-		AutoExecute: false,
-		CustomerStage: signal.CustomerStage,
+		CreatedAt:      time.Now().UTC(),
+		Status:         "draft",
+		AutoExecute:    false,
+		CustomerStage:  signal.CustomerStage,
 		QualifiedScore: signal.Score,
 	}
 }
@@ -110,25 +110,25 @@ func (g *ConfigActionGenerator) generateSetupGuide(signal types.QualifiedSignal,
 推荐发布渠道：技术博客、GitHub文档`
 
 	return types.MarketingAction{
-		ID:          generateActionID(),
-		Type:        types.ActionTypeStrategy,
-		Channel:     types.ChannelInternal,
-		Title:       title,
-		Content:     content,
+		ID:             generateActionID(),
+		Type:           types.ActionTypeStrategy,
+		Channel:        types.ChannelInternal,
+		Title:          title,
+		Content:        content,
 		TargetAudience: "Developers needing configuration help",
-		Priority:    priority,
-		SignalIDs:   []string{signal.Signal.ID},
+		Priority:       priority,
+		SignalIDs:      []string{signal.Signal.ID},
 		Metadata: map[string]interface{}{
-			"signal_type": signal.Signal.Type,
+			"signal_type":     signal.Signal.Type,
 			"signal_strength": signal.Signal.Strength,
-			"platform": signal.Signal.Platform,
+			"platform":        signal.Signal.Platform,
 			"qualified_score": signal.Score,
-			"customer_stage": signal.CustomerStage,
+			"customer_stage":  signal.CustomerStage,
 		},
-		CreatedAt:   time.Now().UTC(),
-		Status:      "draft",
-		AutoExecute: false,
-		CustomerStage: signal.CustomerStage,
+		CreatedAt:      time.Now().UTC(),
+		Status:         "draft",
+		AutoExecute:    false,
+		CustomerStage:  signal.CustomerStage,
 		QualifiedScore: signal.Score,
 	}
 }

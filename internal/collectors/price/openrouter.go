@@ -12,8 +12,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/PuerkitoBio/goquery"
 	"token-bridge-crawler/internal/core"
+
+	"github.com/PuerkitoBio/goquery"
 )
 
 // OpenRouterCollector OpenRouter市场情报采集器
@@ -28,10 +29,10 @@ type OpenRouterCollector struct {
 
 // OpenRouterConfig 配置
 type OpenRouterConfig struct {
-	RankingsURL    string
-	AppsURL        string
-	APIKey         string // 可选，用于API访问
-	RateLimit      time.Duration
+	RankingsURL string
+	AppsURL     string
+	APIKey      string // 可选，用于API访问
+	RateLimit   time.Duration
 }
 
 // OpenRouterModelData 模型使用数据
@@ -47,19 +48,19 @@ type OpenRouterModelData struct {
 
 // OpenRouterAppData 应用使用数据
 type OpenRouterAppData struct {
-	Rank         int     `json:"rank"`
-	AppName      string  `json:"app_name"`
-	Description  string  `json:"description"`
-	WeeklyTokens float64 `json:"weekly_tokens"` // 单位：Billion
-	ModelIDs     []string `json:"model_ids"`    // 应用使用的模型列表
-	Category     string  `json:"category"`
+	Rank         int      `json:"rank"`
+	AppName      string   `json:"app_name"`
+	Description  string   `json:"description"`
+	WeeklyTokens float64  `json:"weekly_tokens"` // 单位：Billion
+	ModelIDs     []string `json:"model_ids"`     // 应用使用的模型列表
+	Category     string   `json:"category"`
 }
 
 // OpenRouterMarketIntel 综合市场情报
 type OpenRouterMarketIntel struct {
-	CollectedAt time.Time             `json:"collected_at"`
-	TopModels   []OpenRouterModelData `json:"top_models"`
-	TopApps     []OpenRouterAppData   `json:"top_apps"`
+	CollectedAt time.Time              `json:"collected_at"`
+	TopModels   []OpenRouterModelData  `json:"top_models"`
+	TopApps     []OpenRouterAppData    `json:"top_apps"`
 	Insights    map[string]interface{} `json:"insights"`
 }
 
@@ -293,7 +294,7 @@ func (c *OpenRouterCollector) toIntelItems(intel OpenRouterMarketIntel) []core.I
 	item.Title = fmt.Sprintf("OpenRouter Market Intelligence - %s", intel.CollectedAt.Format("2006-01-02"))
 
 	// 构建内容摘要
-	content := fmt.Sprintf("Weekly Market Overview:\n")
+	content := "Weekly Market Overview:\n"
 	content += fmt.Sprintf("- Total tracked tokens: %.1fB\n", intel.Insights["total_weekly_tokens_billions"])
 	content += fmt.Sprintf("- Top models tracked: %d\n", len(intel.TopModels))
 	content += fmt.Sprintf("- Top apps tracked: %d\n", len(intel.TopApps))
@@ -312,7 +313,7 @@ func (c *OpenRouterCollector) toIntelItems(intel OpenRouterMarketIntel) []core.I
 
 	// 设置元数据
 	metadataJSON, _ := json.Marshal(intel)
-	json.Unmarshal(metadataJSON, &item.Metadata)
+	_ = json.Unmarshal(metadataJSON, &item.Metadata)
 
 	items = append(items, item)
 

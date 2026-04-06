@@ -8,7 +8,7 @@ import (
 )
 
 // CostActionGenerator 成本动作生成器
-type CostActionGenerator struct {}
+type CostActionGenerator struct{}
 
 // NewCostActionGenerator 创建成本动作生成器
 func NewCostActionGenerator() *CostActionGenerator {
@@ -79,25 +79,25 @@ func (g *CostActionGenerator) generateShortResponse(signal types.QualifiedSignal
 	content := "【内部动作建议】成本压力信号响应：用户对AI使用成本表示担忧，建议提供85%成本节省的案例和Token Bridge的API接入方案。"
 
 	return types.MarketingAction{
-		ID:          generateActionID(),
-		Type:        types.ActionTypeInternalNote,
-		Channel:     types.ChannelInternal,
-		Title:       "成本压力信号响应建议",
-		Content:     content,
+		ID:             generateActionID(),
+		Type:           types.ActionTypeInternalNote,
+		Channel:        types.ChannelInternal,
+		Title:          "成本压力信号响应建议",
+		Content:        content,
 		TargetAudience: "Cost-sensitive developers",
-		Priority:    priority,
-		SignalIDs:   []string{signal.Signal.ID},
+		Priority:       priority,
+		SignalIDs:      []string{signal.Signal.ID},
 		Metadata: map[string]interface{}{
-			"signal_type": signal.Signal.Type,
+			"signal_type":     signal.Signal.Type,
 			"signal_strength": signal.Signal.Strength,
-			"platform": signal.Signal.Platform,
+			"platform":        signal.Signal.Platform,
 			"qualified_score": signal.Score,
-			"customer_stage": signal.CustomerStage,
+			"customer_stage":  signal.CustomerStage,
 		},
-		CreatedAt:   time.Now().UTC(),
-		Status:      "draft",
-		AutoExecute: false,
-		CustomerStage: signal.CustomerStage,
+		CreatedAt:      time.Now().UTC(),
+		Status:         "draft",
+		AutoExecute:    false,
+		CustomerStage:  signal.CustomerStage,
 		QualifiedScore: signal.Score,
 	}
 }
@@ -119,25 +119,25 @@ func (g *CostActionGenerator) generateTechnicalPost(signal types.QualifiedSignal
 推荐发布渠道：Hacker News、Reddit编程社区`
 
 	return types.MarketingAction{
-		ID:          generateActionID(),
-		Type:        types.ActionTypeStrategy,
-		Channel:     types.ChannelInternal,
-		Title:       title,
-		Content:     content,
+		ID:             generateActionID(),
+		Type:           types.ActionTypeStrategy,
+		Channel:        types.ChannelInternal,
+		Title:          title,
+		Content:        content,
 		TargetAudience: "Technical developers",
-		Priority:    priority,
-		SignalIDs:   []string{signal.Signal.ID},
+		Priority:       priority,
+		SignalIDs:      []string{signal.Signal.ID},
 		Metadata: map[string]interface{}{
-			"signal_type": signal.Signal.Type,
+			"signal_type":     signal.Signal.Type,
 			"signal_strength": signal.Signal.Strength,
-			"platform": signal.Signal.Platform,
+			"platform":        signal.Signal.Platform,
 			"qualified_score": signal.Score,
-			"customer_stage": signal.CustomerStage,
+			"customer_stage":  signal.CustomerStage,
 		},
-		CreatedAt:   time.Now().UTC(),
-		Status:      "draft",
-		AutoExecute: false,
-		CustomerStage: signal.CustomerStage,
+		CreatedAt:      time.Now().UTC(),
+		Status:         "draft",
+		AutoExecute:    false,
+		CustomerStage:  signal.CustomerStage,
 		QualifiedScore: signal.Score,
 	}
 }
@@ -159,25 +159,25 @@ func (g *CostActionGenerator) generateCompetitorComparison(signal types.Qualifie
 推荐发布渠道：LinkedIn、Reddit商业社区`
 
 	return types.MarketingAction{
-		ID:          generateActionID(),
-		Type:        types.ActionTypeStrategy,
-		Channel:     types.ChannelInternal,
-		Title:       title,
-		Content:     content,
+		ID:             generateActionID(),
+		Type:           types.ActionTypeStrategy,
+		Channel:        types.ChannelInternal,
+		Title:          title,
+		Content:        content,
 		TargetAudience: "Cost-conscious decision makers",
-		Priority:    priority,
-		SignalIDs:   []string{signal.Signal.ID},
+		Priority:       priority,
+		SignalIDs:      []string{signal.Signal.ID},
 		Metadata: map[string]interface{}{
-			"signal_type": signal.Signal.Type,
+			"signal_type":     signal.Signal.Type,
 			"signal_strength": signal.Signal.Strength,
-			"platform": signal.Signal.Platform,
+			"platform":        signal.Signal.Platform,
 			"qualified_score": signal.Score,
-			"customer_stage": signal.CustomerStage,
+			"customer_stage":  signal.CustomerStage,
 		},
-		CreatedAt:   time.Now().UTC(),
-		Status:      "draft",
-		AutoExecute: false,
-		CustomerStage: signal.CustomerStage,
+		CreatedAt:      time.Now().UTC(),
+		Status:         "draft",
+		AutoExecute:    false,
+		CustomerStage:  signal.CustomerStage,
 		QualifiedScore: signal.Score,
 	}
 }

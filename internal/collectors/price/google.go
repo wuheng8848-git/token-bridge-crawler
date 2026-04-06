@@ -9,8 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/PuerkitoBio/goquery"
 	"token-bridge-crawler/internal/core"
+
+	"github.com/PuerkitoBio/goquery"
 )
 
 // GoogleCollector Google价格采集器
@@ -152,14 +153,14 @@ func (c *GoogleCollector) modelNameToCode(name string) string {
 
 	// Google模型映射
 	mappings := map[string]string{
-		"gemini-2-5-pro":  "gemini-2.5-pro",
+		"gemini-2-5-pro":   "gemini-2.5-pro",
 		"gemini-2-5-flash": "gemini-2.5-flash",
-		"gemini-2-0-pro":  "gemini-2.0-pro",
+		"gemini-2-0-pro":   "gemini-2.0-pro",
 		"gemini-2-0-flash": "gemini-2.0-flash",
-		"gemini-1-5-pro":  "gemini-1.5-pro",
+		"gemini-1-5-pro":   "gemini-1.5-pro",
 		"gemini-1-5-flash": "gemini-1.5-flash",
-		"gemini-pro":      "gemini-pro",
-		"gemini-ultra":    "gemini-ultra",
+		"gemini-pro":       "gemini-pro",
+		"gemini-ultra":     "gemini-ultra",
 	}
 
 	for key, value := range mappings {

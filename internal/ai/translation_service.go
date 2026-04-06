@@ -126,7 +126,7 @@ func (s *TranslationService) TranslateIntelItems(items []core.IntelItem) error {
 	// 收集需要翻译的标题和内容
 	var titlesToTranslate []string
 	var contentsToTranslate []string
-	titleIndices := make(map[int]int)  // 记录哪些item的标题需要翻译
+	titleIndices := make(map[int]int)   // 记录哪些item的标题需要翻译
 	contentIndices := make(map[int]int) // 记录哪些item的内容需要翻译
 
 	for i, item := range items {
@@ -286,8 +286,8 @@ func (s *TranslationService) TranslateWithContext(ctx context.Context, text stri
 // GetTranslationStatus 获取翻译状态
 func (s *TranslationService) GetTranslationStatus() map[string]interface{} {
 	return map[string]interface{}{
-		"enabled":   s.enabled,
-		"batchSize": s.batchSize,
+		"enabled":       s.enabled,
+		"batchSize":     s.batchSize,
 		"hasTranslator": s.translator != nil,
 	}
 }

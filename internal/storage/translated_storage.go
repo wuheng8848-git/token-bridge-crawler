@@ -27,7 +27,7 @@ func NewTranslatedStorage(base IntelligenceStorage, translator core.TranslationS
 func (s *TranslatedStorage) SaveItem(ctx context.Context, item *core.IntelItem) error {
 	// 先翻译
 	if s.translator != nil {
-		s.translator.TranslateIntelItem(item)
+		_ = s.translator.TranslateIntelItem(item)
 	}
 
 	// 再保存
@@ -39,7 +39,7 @@ func (s *TranslatedStorage) SaveItems(ctx context.Context, items []core.IntelIte
 	// 先批量翻译
 	if s.translator != nil && len(items) > 0 {
 		log.Printf("[TranslatedStorage] 开始翻译 %d 条情报项", len(items))
-		s.translator.TranslateIntelItems(items)
+		_ = s.translator.TranslateIntelItems(items)
 		log.Printf("[TranslatedStorage] 翻译完成")
 	}
 
@@ -57,9 +57,29 @@ func (s *TranslatedStorage) GetItems(ctx context.Context, filter IntelFilter) ([
 	return s.base.GetItems(ctx, filter)
 }
 
+// GetItemsCount 获取符合条件的情报项总数
+func (s *TranslatedStorage) GetItemsCount(ctx context.Context, filter IntelFilter) (int64, error) {
+	return s.base.GetItemsCount(ctx, filter)
+}
+
 // UpdateItemStatus 更新情报项状态
 func (s *TranslatedStorage) UpdateItemStatus(ctx context.Context, id string, status core.IntelStatus) error {
 	return s.base.UpdateItemStatus(ctx, id, status)
+}
+
+// GetSourceStats 获取按来源分组的统计数据
+func (s *TranslatedStorage) GetSourceStats(ctx context.Context, timeRange ...time.Time) (map[string]int64, error) {
+	return s.base.GetSourceStats(ctx, timeRange...)
+}
+
+// GetTranslationStats 获取翻译覆盖率统计
+func (s *TranslatedStorage) GetTranslationStats(ctx context.Context) (map[string]int64, error) {
+	return s.base.GetTranslationStats(ctx)
+}
+
+// GetQualityAnalysis 获取采集器质量分析
+func (s *TranslatedStorage) GetQualityAnalysis(ctx context.Context, source string, limit int) (map[string]interface{}, error) {
+	return s.base.GetQualityAnalysis(ctx, source, limit)
 }
 
 // SaveCollectorRun 保存采集器运行记录

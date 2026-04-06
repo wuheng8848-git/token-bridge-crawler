@@ -46,14 +46,14 @@ func (c *RedditCollector) CollectUserPains(ctx context.Context) ([]core.IntelIte
 		"programming",
 	}
 
-	// 搜索关键词
+	// 搜索关键词 - 聚焦 AI API 相关痛点
 	keywords := []string{
-		"API cost",
-		"pricing",
-		"expensive",
-		"alternative",
-		"rate limit",
-		"billing",
+		"API pricing expensive",
+		"token cost",
+		"billing charges",
+		"OpenAI alternative",
+		"subscription issues",
+		"API costs too high",
 	}
 
 	for _, subreddit := range subreddits {

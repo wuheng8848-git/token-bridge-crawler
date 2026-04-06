@@ -8,7 +8,7 @@ import (
 )
 
 // MigrationActionGenerator 迁移意愿动作生成器
-type MigrationActionGenerator struct {}
+type MigrationActionGenerator struct{}
 
 // NewMigrationActionGenerator 创建迁移意愿动作生成器
 func NewMigrationActionGenerator() *MigrationActionGenerator {

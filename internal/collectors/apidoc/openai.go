@@ -87,11 +87,11 @@ func (c *OpenAIAPIDocCollector) parseOpenAIChange(s *goquery.Selection, date tim
 	affectedAPIs := c.extractAffectedAPIs(description)
 
 	return &APIChange{
-		Title:       title,
-		Description: description,
-		Date:        date,
-		Type:        changeType,
-		URL:         url,
+		Title:        title,
+		Description:  description,
+		Date:         date,
+		Type:         changeType,
+		URL:          url,
 		AffectedAPIs: affectedAPIs,
 	}
 }

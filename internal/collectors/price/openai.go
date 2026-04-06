@@ -9,8 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/PuerkitoBio/goquery"
 	"token-bridge-crawler/internal/core"
+
+	"github.com/PuerkitoBio/goquery"
 )
 
 // OpenAICollector OpenAI价格采集器
@@ -47,9 +48,9 @@ func (c *OpenAICollector) fetchFromWeb(ctx context.Context) ([]core.IntelItem, e
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch page: %w", err)
 	}
-	
+
 	var prices []PriceData
-	
+
 	// 尝试多种选择器（页面结构可能变化）
 	selectors := []string{
 		"[data-testid='pricing-table'] tbody tr",
@@ -58,7 +59,7 @@ func (c *OpenAICollector) fetchFromWeb(ctx context.Context) ([]core.IntelItem, e
 		"[class*='pricing'] tr",
 		"[class*='price'] tr",
 	}
-	
+
 	var rows *goquery.Selection
 	for _, selector := range selectors {
 		rows = doc.Find(selector)
@@ -66,28 +67,28 @@ func (c *OpenAICollector) fetchFromWeb(ctx context.Context) ([]core.IntelItem, e
 			break
 		}
 	}
-	
+
 	if rows.Length() == 0 {
 		return nil, fmt.Errorf("no pricing rows found with any selector")
 	}
-	
+
 	rows.Each(func(i int, s *goquery.Selection) {
 		price := c.parsePriceRow(s)
 		if price != nil {
 			prices = append(prices, *price)
 		}
 	})
-	
+
 	if len(prices) == 0 {
 		return nil, fmt.Errorf("no valid prices parsed from page")
 	}
-	
+
 	// 保存静态备份
 	if err := c.saveStaticBackup(prices); err != nil {
 		// 备份失败不影响主流程
 		c.LogFetchResult("web", len(prices), fmt.Errorf("backup failed: %w", err))
 	}
-	
+
 	return c.pricesToIntelItems(prices), nil
 }
 
@@ -98,32 +99,32 @@ func (c *OpenAICollector) parsePriceRow(s *goquery.Selection) *PriceData {
 	if modelName == "" {
 		return nil
 	}
-	
+
 	// 清理模型名称
 	modelName = cleanModelName(modelName)
 	modelCode := modelNameToCode(modelName)
-	
+
 	// 提取价格单元格
 	cells := s.Find("td")
 	if cells.Length() < 2 {
 		return nil
 	}
-	
+
 	// 解析输入价格
 	inputPriceText := cells.Eq(1).Text()
 	inputPrice := parsePrice(inputPriceText)
-	
+
 	// 解析输出价格（如果有）
 	outputPrice := inputPrice
 	if cells.Length() >= 3 {
 		outputPriceText := cells.Eq(2).Text()
 		outputPrice = parsePrice(outputPriceText)
 	}
-	
+
 	if inputPrice <= 0 && outputPrice <= 0 {
 		return nil
 	}
-	
+
 	return &PriceData{
 		ModelCode:   modelCode,
 		ModelName:   modelName,
@@ -137,11 +138,11 @@ func (c *OpenAICollector) parsePriceRow(s *goquery.Selection) *PriceData {
 func cleanModelName(name string) string {
 	// 移除多余空白
 	name = strings.Join(strings.Fields(name), " ")
-	
+
 	// 移除常见前缀/后缀
 	name = strings.TrimPrefix(name, "Model")
 	name = strings.TrimSpace(name)
-	
+
 	return name
 }
 
@@ -149,13 +150,13 @@ func cleanModelName(name string) string {
 func modelNameToCode(name string) string {
 	// 转换为小写
 	code := strings.ToLower(name)
-	
+
 	// 替换空格和特殊字符
 	code = strings.ReplaceAll(code, " ", "-")
 	code = strings.ReplaceAll(code, "(", "")
 	code = strings.ReplaceAll(code, ")", "")
 	code = strings.ReplaceAll(code, ".", "-")
-	
+
 	// 常见模型映射
 	mappings := map[string]string{
 		"gpt-4o":           "gpt-4o",
@@ -169,14 +170,14 @@ func modelNameToCode(name string) string {
 		"whisper":          "whisper",
 		"tts":              "tts",
 	}
-	
+
 	// 尝试匹配
 	for key, value := range mappings {
 		if strings.Contains(code, key) {
 			return value
 		}
 	}
-	
+
 	return code
 }
 
@@ -185,30 +186,30 @@ func parsePrice(text string) float64 {
 	// 提取数字
 	re := regexp.MustCompile(`[\d.]+`)
 	matches := re.FindAllString(text, -1)
-	
+
 	if len(matches) == 0 {
 		return 0
 	}
-	
+
 	// 尝试解析第一个数字
 	price, err := strconv.ParseFloat(matches[0], 64)
 	if err != nil {
 		return 0
 	}
-	
+
 	// 检查单位
 	textLower := strings.ToLower(text)
-	
+
 	// 如果是 per 1K tokens，转换为 per million
 	if strings.Contains(textLower, "1k") || strings.Contains(textLower, "1,000") {
 		price *= 1000
 	}
-	
+
 	// 如果是 per token，转换为 per million
 	if strings.Contains(textLower, "/token") && !strings.Contains(textLower, "1k") && !strings.Contains(textLower, "million") {
 		price *= 1000000
 	}
-	
+
 	return price
 }
 

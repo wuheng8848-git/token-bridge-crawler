@@ -8,7 +8,7 @@ import (
 )
 
 // GovernanceActionGenerator 治理起点动作生成器
-type GovernanceActionGenerator struct {}
+type GovernanceActionGenerator struct{}
 
 // NewGovernanceActionGenerator 创建治理起点动作生成器
 func NewGovernanceActionGenerator() *GovernanceActionGenerator {

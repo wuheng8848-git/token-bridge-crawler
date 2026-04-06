@@ -16,17 +16,17 @@ import (
 
 // IntelligenceScheduler 情报调度器
 type IntelligenceScheduler struct {
-	registry  *core.CollectorRegistry
-	storage   storage.IntelligenceStorage
-	cron      *cron.Cron
-	metrics   *core.MetricsCollector
-	
+	registry *core.CollectorRegistry
+	storage  storage.IntelligenceStorage
+	cron     *cron.Cron
+	metrics  *core.MetricsCollector
+
 	// 运行状态
-	running   map[string]bool
-	mu        sync.RWMutex
-	
+	running map[string]bool
+	mu      sync.RWMutex
+
 	// 配置
-	config    SchedulerConfig
+	config SchedulerConfig
 }
 
 // SchedulerConfig 调度器配置
@@ -35,7 +35,7 @@ type SchedulerConfig struct {
 	DefaultRateLimit time.Duration
 	MaxRetries       int
 	RetryDelay       time.Duration
-	
+
 	// 采集器特定配置
 	CollectorConfigs map[string]CollectorConfig
 }
@@ -43,7 +43,7 @@ type SchedulerConfig struct {
 // CollectorConfig 采集器配置
 type CollectorConfig struct {
 	Enabled   bool
-	Cron      string  // 可选，覆盖默认调度
+	Cron      string // 可选，覆盖默认调度
 	RateLimit time.Duration
 }
 
@@ -66,30 +66,30 @@ func NewIntelligenceScheduler(
 // Start 启动调度器
 func (s *IntelligenceScheduler) Start() error {
 	log.Println("[Scheduler] 启动情报调度器...")
-	
+
 	// 为每个启用的采集器注册定时任务
 	for _, collector := range s.registry.List() {
 		if !s.isEnabled(collector.Name()) {
 			log.Printf("[Scheduler] 采集器 %s 已禁用，跳过", collector.Name())
 			continue
 		}
-		
+
 		// 获取采集器的调度配置
 		cronExpr := s.getCronExpression(collector)
-		
+
 		_, err := s.cron.AddFunc(cronExpr, func(c core.Collector) func() {
 			return func() {
-				s.executeCollector(context.Background(), c)
+				_ = s.executeCollector(context.Background(), c)
 			}
 		}(collector))
-		
+
 		if err != nil {
 			return fmt.Errorf("failed to schedule collector %s: %w", collector.Name(), err)
 		}
-		
+
 		log.Printf("[Scheduler] 已注册采集器 %s，调度规则: %s", collector.Name(), cronExpr)
 	}
-	
+
 	s.cron.Start()
 	log.Println("[Scheduler] 情报调度器已启动")
 	return nil
@@ -109,7 +109,7 @@ func (s *IntelligenceScheduler) ExecuteNow(ctx context.Context, collectorName st
 	if !ok {
 		return fmt.Errorf("collector not found: %s", collectorName)
 	}
-	
+
 	return s.executeCollector(ctx, collector)
 }
 
@@ -117,12 +117,12 @@ func (s *IntelligenceScheduler) ExecuteNow(ctx context.Context, collectorName st
 func (s *IntelligenceScheduler) ExecuteAllNow(ctx context.Context) error {
 	var wg sync.WaitGroup
 	errChan := make(chan error, len(s.registry.List()))
-	
+
 	for _, collector := range s.registry.List() {
 		if !s.isEnabled(collector.Name()) {
 			continue
 		}
-		
+
 		wg.Add(1)
 		go func(c core.Collector) {
 			defer wg.Done()
@@ -131,15 +131,15 @@ func (s *IntelligenceScheduler) ExecuteAllNow(ctx context.Context) error {
 			}
 		}(collector)
 	}
-	
+
 	wg.Wait()
 	close(errChan)
-	
+
 	var errs []error
 	for err := range errChan {
 		errs = append(errs, err)
 	}
-	
+
 	if len(errs) > 0 {
 		return fmt.Errorf("some collectors failed: %v", errs)
 	}
@@ -154,10 +154,10 @@ func (s *IntelligenceScheduler) executeCollector(ctx context.Context, collector 
 		return nil
 	}
 	defer s.setRunning(collector.Name(), false)
-	
+
 	startTime := time.Now().UTC()
 	log.Printf("[Scheduler] 开始执行采集器 %s", collector.Name())
-	
+
 	// 创建运行记录
 	run := &storage.CollectorRun{
 		CollectorName: collector.Name(),
@@ -166,12 +166,12 @@ func (s *IntelligenceScheduler) executeCollector(ctx context.Context, collector 
 		StartedAt:     startTime,
 		Status:        "running",
 	}
-	
+
 	// 执行采集
 	var items []core.IntelItem
 	var err error
 	var strategyUsed string
-	
+
 	// 如果是增强版采集器，使用带降级的抓取
 	if enhanced, ok := collector.(core.EnhancedCollector); ok {
 		items, err = enhanced.FetchWithFallback(ctx)
@@ -180,9 +180,9 @@ func (s *IntelligenceScheduler) executeCollector(ctx context.Context, collector 
 		items, err = collector.Fetch(ctx)
 		strategyUsed = "default"
 	}
-	
+
 	duration := time.Since(startTime)
-	
+
 	// 处理结果
 	if err != nil {
 		run.Status = "failed"
@@ -190,14 +190,14 @@ func (s *IntelligenceScheduler) executeCollector(ctx context.Context, collector 
 		run.CompletedAt = func() *time.Time { t := time.Now().UTC(); return &t }()
 		run.DurationMs = int(duration.Milliseconds())
 		run.StrategyUsed = strategyUsed
-		
-		s.storage.SaveCollectorRun(ctx, run)
+
+		_ = s.storage.SaveCollectorRun(ctx, run)
 		s.metrics.RecordRun(collector.Name(), false, duration, err)
-		
+
 		log.Printf("[Scheduler] 采集器 %s 执行失败: %v", collector.Name(), err)
 		return err
 	}
-	
+
 	// 验证数据（如果是增强版）
 	if enhanced, ok := collector.(core.EnhancedCollector); ok {
 		if validateErr := enhanced.Validate(items); validateErr != nil {
@@ -205,7 +205,7 @@ func (s *IntelligenceScheduler) executeCollector(ctx context.Context, collector 
 			// 验证失败不中断，继续保存
 		}
 	}
-	
+
 	// 保存数据
 	if len(items) > 0 {
 		if saveErr := s.storage.SaveItems(ctx, items); saveErr != nil {
@@ -221,16 +221,16 @@ func (s *IntelligenceScheduler) executeCollector(ctx context.Context, collector 
 		run.Status = "success"
 		log.Printf("[Scheduler] 采集器 %s 未获取到数据", collector.Name())
 	}
-	
+
 	completedAt := time.Now().UTC()
 	run.CompletedAt = &completedAt
 	run.DurationMs = int(duration.Milliseconds())
 	run.StrategyUsed = strategyUsed
-	
+
 	// 保存运行记录
-	s.storage.SaveCollectorRun(ctx, run)
+	_ = s.storage.SaveCollectorRun(ctx, run)
 	s.metrics.RecordRun(collector.Name(), true, duration, nil)
-	
+
 	return nil
 }
 
@@ -248,7 +248,7 @@ func (s *IntelligenceScheduler) getCronExpression(collector core.Collector) stri
 	if cfg, ok := s.config.CollectorConfigs[collector.Name()]; ok && cfg.Cron != "" {
 		return cfg.Cron
 	}
-	
+
 	// 根据情报类型使用默认规则
 	switch collector.IntelType() {
 	case core.IntelTypePrice:
@@ -268,11 +268,11 @@ func (s *IntelligenceScheduler) getCronExpression(collector core.Collector) stri
 func (s *IntelligenceScheduler) setRunning(name string, running bool) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	
+
 	if running && s.running[name] {
 		return false // 已在运行
 	}
-	
+
 	s.running[name] = running
 	return true
 }
@@ -286,12 +286,12 @@ func (s *IntelligenceScheduler) GetMetrics() []*core.CollectorMetrics {
 func (s *IntelligenceScheduler) GetCollectorStatus(collectorName string) (string, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	
+
 	collector, ok := s.registry.Get(collectorName)
 	if !ok {
 		return "", fmt.Errorf("collector not found: %s", collectorName)
 	}
-	
+
 	// 如果是增强版，使用健康检查
 	if enhanced, ok := collector.(core.EnhancedCollector); ok {
 		status, err := enhanced.HealthCheck()
@@ -300,7 +300,7 @@ func (s *IntelligenceScheduler) GetCollectorStatus(collectorName string) (string
 		}
 		return status, nil
 	}
-	
+
 	// 基础版返回运行状态
 	if s.running[collectorName] {
 		return "running", nil

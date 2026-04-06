@@ -9,8 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/PuerkitoBio/goquery"
 	"token-bridge-crawler/internal/core"
+
+	"github.com/PuerkitoBio/goquery"
 )
 
 // AnthropicCollector Anthropic价格采集器
@@ -124,15 +125,15 @@ func (c *AnthropicCollector) modelNameToCode(name string) string {
 
 	// Anthropic模型映射
 	mappings := map[string]string{
-		"claude-4-6":    "claude-4.6",
-		"claude-4-5":    "claude-4.5",
-		"claude-4-0":    "claude-4.0",
-		"claude-3-5":    "claude-3.5",
-		"claude-3-0":    "claude-3.0",
-		"claude-3-opus":  "claude-3-opus",
+		"claude-4-6":      "claude-4.6",
+		"claude-4-5":      "claude-4.5",
+		"claude-4-0":      "claude-4.0",
+		"claude-3-5":      "claude-3.5",
+		"claude-3-0":      "claude-3.0",
+		"claude-3-opus":   "claude-3-opus",
 		"claude-3-sonnet": "claude-3-sonnet",
 		"claude-3-haiku":  "claude-3-haiku",
-		"claude-2":       "claude-2",
+		"claude-2":        "claude-2",
 	}
 
 	for key, value := range mappings {
@@ -173,9 +174,8 @@ func parseAnthropicPrice(text, inputKey, outputKey string) float64 {
 				// 转换为 per million tokens
 				if unit == "K" {
 					price *= 1000
-				} else if unit == "M" {
-					// 已经是 million
 				}
+				// unit == "M" 已经是 million，无需转换
 
 				return price
 			}

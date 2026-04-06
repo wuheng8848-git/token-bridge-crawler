@@ -10,7 +10,7 @@ import (
 )
 
 // GeneralInterestDetector 泛兴趣信号检测器
-type GeneralInterestDetector struct {}
+type GeneralInterestDetector struct{}
 
 // NewGeneralInterestDetector 创建泛兴趣信号检测器
 func NewGeneralInterestDetector() *GeneralInterestDetector {
@@ -88,20 +88,20 @@ func (d *GeneralInterestDetector) DetectFromIntel(item core.IntelItem) ([]types.
 		}
 
 		signal := types.CustomerSignal{
-			ID:        generateSignalID(),
-			Type:      types.SignalTypeGeneralInterest,
-			Strength:  strength,
-			Content:   item.Title,
-			Platform:  platform,
-			Author:    author,
-			URL:       item.URL,
+			ID:       generateSignalID(),
+			Type:     types.SignalTypeGeneralInterest,
+			Strength: strength,
+			Content:  item.Title,
+			Platform: platform,
+			Author:   author,
+			URL:      item.URL,
 			Metadata: map[string]interface{}{
 				"found_keywords": foundInterestKeywords,
 				"intel_type":     item.IntelType,
 				"source":         item.Source,
 			},
-			DetectedAt:    time.Now().UTC(),
-			RelatedIntel:  item.ID,
+			DetectedAt:   time.Now().UTC(),
+			RelatedIntel: item.ID,
 		}
 
 		signals = append(signals, signal)

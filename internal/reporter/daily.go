@@ -20,11 +20,11 @@ type DailyReporter struct {
 
 // DailyReportConfig 日报配置
 type DailyReportConfig struct {
-	Enabled     bool
-	Cron        string
-	Email       bool
-	EmailTo     []string
-	EmailFrom   string
+	Enabled      bool
+	Cron         string
+	Email        bool
+	EmailTo      []string
+	EmailFrom    string
 	EmailSubject string
 	IncludeTypes []core.IntelType
 }
@@ -87,8 +87,8 @@ func (r *DailyReporter) generateReport(itemsByType map[core.IntelType][]core.Int
 
 	// 报告头部
 	report.WriteString(fmt.Sprintf("📊 Token Bridge 情报日报 - %s\n\n", endTime.Format("2006-01-02")))
-	report.WriteString(fmt.Sprintf("时间范围: %s 至 %s\n\n", 
-		startTime.Format("2006-01-02 15:04"), 
+	report.WriteString(fmt.Sprintf("时间范围: %s 至 %s\n\n",
+		startTime.Format("2006-01-02 15:04"),
 		endTime.Format("2006-01-02 15:04")))
 
 	// 价格情报
@@ -125,7 +125,7 @@ func (r *DailyReporter) generateReport(itemsByType map[core.IntelType][]core.Int
 		totalItems += len(items)
 	}
 
-	report.WriteString(fmt.Sprintf("## 总结\n"))
+	report.WriteString("## 总结\n")
 	report.WriteString(fmt.Sprintf("- 总情报数: %d\n", totalItems))
 	report.WriteString(fmt.Sprintf("- 价格情报: %d\n", len(itemsByType[core.IntelTypePrice])))
 	report.WriteString(fmt.Sprintf("- API变更: %d\n", len(itemsByType[core.IntelTypeAPIDoc])))

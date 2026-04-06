@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -21,7 +22,13 @@ type IntelligenceStorage interface {
 	SaveItems(ctx context.Context, items []core.IntelItem) error
 	GetItemByID(ctx context.Context, id string) (*core.IntelItem, error)
 	GetItems(ctx context.Context, filter IntelFilter) ([]core.IntelItem, error)
+	GetItemsCount(ctx context.Context, filter IntelFilter) (int64, error)
 	UpdateItemStatus(ctx context.Context, id string, status core.IntelStatus) error
+
+	// 统计查询
+	GetSourceStats(ctx context.Context, timeRange ...time.Time) (map[string]int64, error)
+	GetTranslationStats(ctx context.Context) (map[string]int64, error)
+	GetQualityAnalysis(ctx context.Context, source string, limit int) (map[string]interface{}, error)
 
 	// 采集器运行日志
 	SaveCollectorRun(ctx context.Context, run *CollectorRun) error
@@ -47,29 +54,29 @@ type IntelligenceStorage interface {
 
 // IntelFilter 情报查询过滤器
 type IntelFilter struct {
-	IntelType   core.IntelType
-	Source      string
-	Status      core.IntelStatus
-	StartTime   *time.Time
-	EndTime     *time.Time
-	Limit       int
-	Offset      int
+	IntelType core.IntelType
+	Source    string
+	Status    core.IntelStatus
+	StartTime *time.Time
+	EndTime   *time.Time
+	Limit     int
+	Offset    int
 }
 
 // CollectorRun 采集器运行记录
 type CollectorRun struct {
-	ID             string    `db:"id"`
-	CollectorName  string    `db:"collector_name"`
-	IntelType      string    `db:"intel_type"`
-	Source         string    `db:"source"`
-	Status         string    `db:"status"` // 'success', 'failed', 'partial'
-	ItemsCount     int       `db:"items_count"`
-	ErrorMessage   string    `db:"error_message"`
-	StartedAt      time.Time `db:"started_at"`
-	CompletedAt    *time.Time `db:"completed_at"`
-	DurationMs     int       `db:"duration_ms"`
-	StrategyUsed   string    `db:"strategy_used"`
-	CreatedAt      time.Time `db:"created_at"`
+	ID            string     `db:"id"`
+	CollectorName string     `db:"collector_name"`
+	IntelType     string     `db:"intel_type"`
+	Source        string     `db:"source"`
+	Status        string     `db:"status"` // 'success', 'failed', 'partial'
+	ItemsCount    int        `db:"items_count"`
+	ErrorMessage  string     `db:"error_message"`
+	StartedAt     time.Time  `db:"started_at"`
+	CompletedAt   *time.Time `db:"completed_at"`
+	DurationMs    int        `db:"duration_ms"`
+	StrategyUsed  string     `db:"strategy_used"`
+	CreatedAt     time.Time  `db:"created_at"`
 }
 
 // AlertRule 告警规则
@@ -114,18 +121,18 @@ type IntelStats struct {
 
 // CustomerSignal 客户信号
 type CustomerSignal struct {
-	ID           string                 `json:"id" db:"id"`
-	IntelItemID  *string                `json:"intel_item_id,omitempty" db:"intel_item_id"`
-	SignalType   string                 `json:"signal_type" db:"signal_type"`
-	Strength     int                    `json:"strength" db:"strength"`
-	Content      string                 `json:"content" db:"content"`
-	Platform     string                 `json:"platform" db:"platform"`
-	Author       string                 `json:"author" db:"author"`
-	URL          string                 `json:"url" db:"url"`
-	Metadata     map[string]interface{} `json:"metadata" db:"metadata"`
-	Status       string                 `json:"status" db:"status"`
-	DetectedAt   time.Time              `json:"detected_at" db:"detected_at"`
-	CreatedAt    time.Time              `json:"created_at" db:"created_at"`
+	ID          string                 `json:"id" db:"id"`
+	IntelItemID *string                `json:"intel_item_id,omitempty" db:"intel_item_id"`
+	SignalType  string                 `json:"signal_type" db:"signal_type"`
+	Strength    int                    `json:"strength" db:"strength"`
+	Content     string                 `json:"content" db:"content"`
+	Platform    string                 `json:"platform" db:"platform"`
+	Author      string                 `json:"author" db:"author"`
+	URL         string                 `json:"url" db:"url"`
+	Metadata    map[string]interface{} `json:"metadata" db:"metadata"`
+	Status      string                 `json:"status" db:"status"`
+	DetectedAt  time.Time              `json:"detected_at" db:"detected_at"`
+	CreatedAt   time.Time              `json:"created_at" db:"created_at"`
 }
 
 // MarketingAction 营销动作
@@ -141,7 +148,7 @@ type MarketingAction struct {
 	SignalIDs      []string               `json:"signal_ids" db:"signal_ids"`
 	AutoExecute    bool                   `json:"auto_execute" db:"auto_execute"`
 	CustomerStage  string                 `json:"customer_stage,omitempty" db:"customer_stage"`
-	QualifiedScore float64                 `json:"qualified_score,omitempty" db:"qualified_score"`
+	QualifiedScore float64                `json:"qualified_score,omitempty" db:"qualified_score"`
 	Metadata       map[string]interface{} `json:"metadata" db:"metadata"`
 	Status         string                 `json:"status" db:"status"`
 	ScheduledAt    *time.Time             `json:"scheduled_at,omitempty" db:"scheduled_at"`
@@ -176,7 +183,7 @@ func (s *PostgresIntelligenceStorage) SaveItem(ctx context.Context, item *core.I
 	}
 
 	_, err = s.pool.Exec(ctx, `
-		INSERT INTO intelligence_items 
+		INSERT INTO intelligence_items
 		(id, intel_type, source, source_id, title, content, url, metadata, captured_at, published_at, status, created_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 		ON CONFLICT (source, source_id, captured_at) WHERE source_id IS NOT NULL
@@ -202,7 +209,7 @@ func (s *PostgresIntelligenceStorage) SaveItems(ctx context.Context, items []cor
 	for _, item := range items {
 		metadataJSON, _ := json.Marshal(item.Metadata)
 		batch.Queue(`
-			INSERT INTO intelligence_items 
+			INSERT INTO intelligence_items
 			(id, intel_type, source, source_id, title, content, url, metadata, captured_at, published_at, status, created_at)
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 			ON CONFLICT (source, source_id, captured_at) WHERE source_id IS NOT NULL
@@ -226,7 +233,7 @@ func (s *PostgresIntelligenceStorage) GetItemByID(ctx context.Context, id string
 	var metadataJSON []byte
 
 	err := s.pool.QueryRow(ctx, `
-		SELECT id, intel_type, source, source_id, title, content, url, metadata, 
+		SELECT id, intel_type, source, source_id, title, content, url, metadata,
 		       captured_at, published_at, status, created_at
 		FROM intelligence_items
 		WHERE id = $1
@@ -239,7 +246,7 @@ func (s *PostgresIntelligenceStorage) GetItemByID(ctx context.Context, id string
 	}
 
 	if len(metadataJSON) > 0 {
-		json.Unmarshal(metadataJSON, &item.Metadata)
+		_ = json.Unmarshal(metadataJSON, &item.Metadata)
 	}
 
 	return &item, nil
@@ -248,7 +255,7 @@ func (s *PostgresIntelligenceStorage) GetItemByID(ctx context.Context, id string
 // GetItems 查询情报项列表
 func (s *PostgresIntelligenceStorage) GetItems(ctx context.Context, filter IntelFilter) ([]core.IntelItem, error) {
 	query := `
-		SELECT id, intel_type, source, source_id, title, content, url, metadata, 
+		SELECT id, intel_type, source, source_id, title, content, url, metadata,
 		       captured_at, published_at, status, created_at
 		FROM intelligence_items
 		WHERE 1=1
@@ -297,7 +304,6 @@ func (s *PostgresIntelligenceStorage) GetItems(ctx context.Context, filter Intel
 	if filter.Offset > 0 {
 		query += fmt.Sprintf(" OFFSET $%d", argIdx)
 		args = append(args, filter.Offset)
-		argIdx++
 	}
 
 	rows, err := s.pool.Query(ctx, query, args...)
@@ -319,7 +325,7 @@ func (s *PostgresIntelligenceStorage) GetItems(ctx context.Context, filter Intel
 		}
 
 		if len(metadataJSON) > 0 {
-			json.Unmarshal(metadataJSON, &item.Metadata)
+			_ = json.Unmarshal(metadataJSON, &item.Metadata)
 		}
 
 		items = append(items, item)
@@ -338,6 +344,310 @@ func (s *PostgresIntelligenceStorage) UpdateItemStatus(ctx context.Context, id s
 	return err
 }
 
+// GetItemsCount 获取符合条件的情报项总数
+func (s *PostgresIntelligenceStorage) GetItemsCount(ctx context.Context, filter IntelFilter) (int64, error) {
+	query := `SELECT COUNT(*) FROM intelligence_items WHERE 1=1`
+	var args []interface{}
+	argIdx := 1
+
+	if filter.IntelType != "" {
+		query += fmt.Sprintf(" AND intel_type = $%d", argIdx)
+		args = append(args, filter.IntelType)
+		argIdx++
+	}
+
+	if filter.Source != "" {
+		query += fmt.Sprintf(" AND source = $%d", argIdx)
+		args = append(args, filter.Source)
+		argIdx++
+	}
+
+	if filter.Status != "" {
+		query += fmt.Sprintf(" AND status = $%d", argIdx)
+		args = append(args, filter.Status)
+		argIdx++
+	}
+
+	if filter.StartTime != nil {
+		query += fmt.Sprintf(" AND captured_at >= $%d", argIdx)
+		args = append(args, *filter.StartTime)
+		argIdx++
+	}
+
+	if filter.EndTime != nil {
+		query += fmt.Sprintf(" AND captured_at <= $%d", argIdx)
+		args = append(args, *filter.EndTime)
+	}
+
+	var count int64
+	err := s.pool.QueryRow(ctx, query, args...).Scan(&count)
+	return count, err
+}
+
+// GetSourceStats 获取按来源分组的统计数据
+func (s *PostgresIntelligenceStorage) GetSourceStats(ctx context.Context, timeRange ...time.Time) (map[string]int64, error) {
+	query := `SELECT source, COUNT(*) as count FROM intelligence_items`
+	var args []interface{}
+
+	if len(timeRange) >= 2 {
+		query += " WHERE captured_at >= $1 AND captured_at < $2"
+		args = append(args, timeRange[0], timeRange[1])
+	}
+
+	query += " GROUP BY source"
+
+	rows, err := s.pool.Query(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	stats := make(map[string]int64)
+	for rows.Next() {
+		var source string
+		var count int64
+		if err := rows.Scan(&source, &count); err != nil {
+			return nil, err
+		}
+		stats[source] = count
+	}
+
+	return stats, rows.Err()
+}
+
+// GetTranslationStats 获取翻译覆盖率统计
+func (s *PostgresIntelligenceStorage) GetTranslationStats(ctx context.Context) (map[string]int64, error) {
+	query := `
+		SELECT
+			COUNT(*) as total,
+			COUNT(*) FILTER (WHERE metadata ? 'title_zh') as translated
+		FROM intelligence_items
+	`
+
+	var total, translated int64
+	err := s.pool.QueryRow(ctx, query).Scan(&total, &translated)
+	if err != nil {
+		return nil, err
+	}
+
+	return map[string]int64{
+		"total":      total,
+		"translated": translated,
+	}, nil
+}
+
+// GetQualityAnalysis 获取采集器质量分析
+// 分析情报内容与项目焦点的匹配度
+func (s *PostgresIntelligenceStorage) GetQualityAnalysis(ctx context.Context, source string, limit int) (map[string]interface{}, error) {
+	// 项目核心关注关键词
+	coreKeywords := []string{
+		"openai", "chatgpt", "gpt-4", "gpt-3.5", "gpt-4o", "o1", "o3",
+		"anthropic", "claude", "claude-3", "claude-4",
+		"google", "gemini", "bard", "vertex ai",
+		"llm", "large language model", "ai api", "token",
+		"pricing", "cost", "expensive", "billing",
+		"api key", "rate limit", "quota",
+		"embedding", "completion", "fine-tuning",
+		"azure openai", "bedrock", "huggingface",
+		"langchain", "llamaindex", "vector",
+	}
+
+	// 主题分类
+	themes := map[string][]string{
+		"pricing_cost":  {"pricing", "cost", "expensive", "billing", "price", "charge", "subscription"},
+		"api_technical": {"api", "endpoint", "rate limit", "quota", "throttle", "error", "bug"},
+		"model_usage":   {"gpt-4", "claude", "gemini", "llm", "model", "completion", "token"},
+		"integration":   {"langchain", "sdk", "integration", "library", "framework"},
+		"comparison":    {"vs", "alternative", "comparison", "switch", "migrate"},
+	}
+
+	// 构建查询
+	query := `
+		SELECT id, source, title, content, metadata
+		FROM intelligence_items
+		WHERE 1=1
+	`
+	var args []interface{}
+	argIdx := 1
+
+	if source != "" {
+		query += fmt.Sprintf(" AND source = $%d", argIdx)
+		args = append(args, source)
+		argIdx++
+	}
+
+	query += fmt.Sprintf(" ORDER BY captured_at DESC LIMIT $%d", argIdx)
+	args = append(args, limit)
+
+	rows, err := s.pool.Query(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	// 分析结果
+	sourceAnalysis := make(map[string]map[string]interface{})
+	totalItems := 0
+	keywordHits := make(map[string]int)
+	themeDistribution := make(map[string]int)
+
+	for rows.Next() {
+		var id, src string
+		var title, content string
+		var metadata []byte
+
+		if err := rows.Scan(&id, &src, &title, &content, &metadata); err != nil {
+			continue
+		}
+
+		totalItems++
+		text := strings.ToLower(title + " " + content)
+
+		// 初始化来源统计
+		if _, exists := sourceAnalysis[src]; !exists {
+			sourceAnalysis[src] = map[string]interface{}{
+				"total":        0,
+				"keywordHits":  0,
+				"themes":       make(map[string]int),
+				"matchedItems": 0,
+			}
+		}
+
+		sourceStats := sourceAnalysis[src]
+		sourceStats["total"] = sourceStats["total"].(int) + 1
+
+		// 检查关键词命中
+		itemHasMatch := false
+		for _, kw := range coreKeywords {
+			if strings.Contains(text, kw) {
+				keywordHits[kw]++
+				sourceStats["keywordHits"] = sourceStats["keywordHits"].(int) + 1
+				itemHasMatch = true
+			}
+		}
+
+		if itemHasMatch {
+			sourceStats["matchedItems"] = sourceStats["matchedItems"].(int) + 1
+		}
+
+		// 主题分类
+		itemThemes := sourceStats["themes"].(map[string]int)
+		for theme, kws := range themes {
+			for _, kw := range kws {
+				if strings.Contains(text, kw) {
+					itemThemes[theme]++
+					themeDistribution[theme]++
+					break
+				}
+			}
+		}
+	}
+
+	// 计算相关性得分
+	for _, stats := range sourceAnalysis {
+		total := stats["total"].(int)
+		matched := stats["matchedItems"].(int)
+		if total > 0 {
+			stats["relevanceScore"] = float64(matched) / float64(total) * 100
+		} else {
+			stats["relevanceScore"] = 0.0
+		}
+	}
+
+	// 获取总体统计
+	overallStats, _ := s.getOverallStats(ctx)
+
+	return map[string]interface{}{
+		"summary": map[string]interface{}{
+			"totalItems":       totalItems,
+			"overallRelevance": calculateOverallRelevance(sourceAnalysis),
+			"topKeywords":      getTopKeywords(keywordHits, 10),
+		},
+		"themeDistribution": themeDistribution,
+		"sourceAnalysis":    sourceAnalysis,
+		"overallStats":      overallStats,
+		"keywords":          coreKeywords,
+		"updatedAt":         time.Now().UTC().Format(time.RFC3339),
+	}, nil
+}
+
+// getOverallStats 获取总体统计
+func (s *PostgresIntelligenceStorage) getOverallStats(ctx context.Context) (map[string]int64, error) {
+	stats := make(map[string]int64)
+
+	// 总数
+	var total int64
+	err := s.pool.QueryRow(ctx, "SELECT COUNT(*) FROM intelligence_items").Scan(&total)
+	if err != nil {
+		return nil, err
+	}
+	stats["total"] = total
+
+	// 按类型统计
+	rows, err := s.pool.Query(ctx, "SELECT intel_type, COUNT(*) FROM intelligence_items GROUP BY intel_type")
+	if err == nil {
+		defer rows.Close()
+		for rows.Next() {
+			var intelType string
+			var count int64
+			if rows.Scan(&intelType, &count) == nil {
+				stats["type_"+intelType] = count
+			}
+		}
+	}
+
+	return stats, nil
+}
+
+// calculateOverallRelevance 计算整体相关性得分
+func calculateOverallRelevance(sourceAnalysis map[string]map[string]interface{}) float64 {
+	var totalItems, totalMatched int
+	for _, stats := range sourceAnalysis {
+		totalItems += stats["total"].(int)
+		totalMatched += stats["matchedItems"].(int)
+	}
+	if totalItems == 0 {
+		return 0
+	}
+	return float64(totalMatched) / float64(totalItems) * 100
+}
+
+// getTopKeywords 获取热门关键词
+func getTopKeywords(keywordHits map[string]int, limit int) []map[string]interface{} {
+	type kwCount struct {
+		Keyword string
+		Count   int
+	}
+
+	var list []kwCount
+	for kw, count := range keywordHits {
+		list = append(list, kwCount{kw, count})
+	}
+
+	// 简单排序
+	for i := 0; i < len(list); i++ {
+		for j := i + 1; j < len(list); j++ {
+			if list[j].Count > list[i].Count {
+				list[i], list[j] = list[j], list[i]
+			}
+		}
+	}
+
+	// 限制数量
+	if len(list) > limit {
+		list = list[:limit]
+	}
+
+	result := make([]map[string]interface{}, len(list))
+	for i, kw := range list {
+		result[i] = map[string]interface{}{
+			"keyword": kw.Keyword,
+			"count":   kw.Count,
+		}
+	}
+	return result
+}
+
 // SaveCollectorRun 保存采集器运行记录
 func (s *PostgresIntelligenceStorage) SaveCollectorRun(ctx context.Context, run *CollectorRun) error {
 	if run.ID == "" {
@@ -345,8 +655,8 @@ func (s *PostgresIntelligenceStorage) SaveCollectorRun(ctx context.Context, run 
 	}
 
 	_, err := s.pool.Exec(ctx, `
-		INSERT INTO collector_runs 
-		(id, collector_name, intel_type, source, status, items_count, error_message, 
+		INSERT INTO collector_runs
+		(id, collector_name, intel_type, source, status, items_count, error_message,
 		 started_at, completed_at, duration_ms, strategy_used, created_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 	`, run.ID, run.CollectorName, run.IntelType, run.Source, run.Status,
@@ -441,7 +751,7 @@ func (s *PostgresIntelligenceStorage) SaveAlertHistory(ctx context.Context, aler
 	}
 
 	_, err := s.pool.Exec(ctx, `
-		INSERT INTO alert_history 
+		INSERT INTO alert_history
 		(id, rule_id, rule_name, intel_item_id, intel_type, source, title, content,
 		 severity, status, notification_channels, created_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
@@ -645,10 +955,10 @@ func (s *PostgresIntelligenceStorage) GetPendingActions(ctx context.Context, lim
 		}
 
 		if len(metadataJSON) > 0 {
-			json.Unmarshal(metadataJSON, &action.Metadata)
+			_ = json.Unmarshal(metadataJSON, &action.Metadata)
 		}
 		if len(signalIDsJSON) > 0 {
-			json.Unmarshal(signalIDsJSON, &action.SignalIDs)
+			_ = json.Unmarshal(signalIDsJSON, &action.SignalIDs)
 		}
 
 		actions = append(actions, action)

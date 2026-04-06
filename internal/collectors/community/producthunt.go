@@ -120,12 +120,12 @@ func (c *ProductHuntCollector) fetchHotProducts(ctx context.Context) ([]core.Int
 
 		// 设置元数据
 		item.Metadata = core.Metadata{
-			"platform":      "producthunt",
-			"votes":         product.Votes,
+			"platform":       "producthunt",
+			"votes":          product.Votes,
 			"comments_count": product.Comments,
-			"product_name":  product.Name,
-			"launch_date":   product.LaunchDate,
-			"category":      "ai_tool",
+			"product_name":   product.Name,
+			"launch_date":    product.LaunchDate,
+			"category":       "ai_tool",
 		}
 
 		// 解析发布时间
@@ -143,14 +143,14 @@ func (c *ProductHuntCollector) fetchHotProducts(ctx context.Context) ([]core.Int
 func (c *ProductHuntCollector) fetchDiscussions(ctx context.Context) ([]core.IntelItem, error) {
 	// 模拟讨论数据
 	sampleDiscussions := []struct {
-		Title      string
-		Content    string
-		Author     string
-		Votes      int
-		Comments   int
-		URL        string
-		PostDate   string
-		Topic      string
+		Title    string
+		Content  string
+		Author   string
+		Votes    int
+		Comments int
+		URL      string
+		PostDate string
+		Topic    string
 	}{{
 		Title:    "Best AI API cost optimization tools",
 		Content:  "Looking for recommendations on tools that can help optimize AI API costs...",
@@ -181,11 +181,11 @@ func (c *ProductHuntCollector) fetchDiscussions(ctx context.Context) ([]core.Int
 
 		// 设置元数据
 		item.Metadata = core.Metadata{
-			"platform":       "producthunt",
-			"author":         discussion.Author,
-			"votes":          discussion.Votes,
-			"comments_count": discussion.Comments,
-			"topic":          discussion.Topic,
+			"platform":        "producthunt",
+			"author":          discussion.Author,
+			"votes":           discussion.Votes,
+			"comments_count":  discussion.Comments,
+			"topic":           discussion.Topic,
 			"discussion_type": "forum",
 		}
 

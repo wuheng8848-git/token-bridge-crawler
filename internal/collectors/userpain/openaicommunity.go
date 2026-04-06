@@ -155,12 +155,12 @@ func (c *OpenAICommunityCollector) searchPosts(ctx context.Context, query string
 		painType := c.detectPainType(post.TopicTitle + " " + post.Content)
 
 		item.Metadata = core.Metadata{
-			"platform":     "openai_community",
-			"topic_id":     post.TopicID,
-			"author":       post.Username,
-			"like_count":   post.LikeCount,
-			"pain_type":    painType,
-			"query":        query,
+			"platform":   "openai_community",
+			"topic_id":   post.TopicID,
+			"author":     post.Username,
+			"like_count": post.LikeCount,
+			"pain_type":  painType,
+			"query":      query,
 		}
 
 		item.PublishedAt = &post.CreatedAt
@@ -184,14 +184,14 @@ func (c *OpenAICommunityCollector) searchPosts(ctx context.Context, query string
 		painType := c.detectPainType(topic.Title)
 
 		item.Metadata = core.Metadata{
-			"platform":      "openai_community",
-			"topic_id":      topic.ID,
-			"posts_count":   topic.PostsCount,
-			"view_count":    topic.ViewCount,
-			"like_count":    topic.LikeCount,
-			"pain_type":     painType,
-			"query":         query,
-			"is_topic":      true,
+			"platform":    "openai_community",
+			"topic_id":    topic.ID,
+			"posts_count": topic.PostsCount,
+			"view_count":  topic.ViewCount,
+			"like_count":  topic.LikeCount,
+			"pain_type":   painType,
+			"query":       query,
+			"is_topic":    true,
 		}
 
 		item.PublishedAt = &topic.CreatedAt

@@ -8,8 +8,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/PuerkitoBio/goquery"
 	"token-bridge-crawler/internal/core"
+
+	"github.com/PuerkitoBio/goquery"
 )
 
 // APIDocCollector API文档采集器基类
@@ -20,18 +21,18 @@ type APIDocCollector struct {
 
 // APIDocConfig 配置
 type APIDocConfig struct {
-	ChangelogURL  string
-	APIDocURL     string
-	RateLimit     time.Duration
+	ChangelogURL string
+	APIDocURL    string
+	RateLimit    time.Duration
 }
 
 // APIChange 文档变更
 type APIChange struct {
-	Title       string    `json:"title"`
-	Description string    `json:"description"`
-	Date        time.Time `json:"date"`
-	Type        string    `json:"type"` // "new_feature", "breaking_change", "deprecated", "bug_fix", "improvement"
-	URL         string    `json:"url"`
+	Title        string    `json:"title"`
+	Description  string    `json:"description"`
+	Date         time.Time `json:"date"`
+	Type         string    `json:"type"` // "new_feature", "breaking_change", "deprecated", "bug_fix", "improvement"
+	URL          string    `json:"url"`
 	AffectedAPIs []string  `json:"affected_apis"`
 }
 
@@ -91,9 +92,9 @@ func (c *APIDocCollector) toIntelItems(changes []APIChange) []core.IntelItem {
 
 		// 设置元数据
 		item.Metadata = core.Metadata{
-			"change_type":     change.Type,
-			"affected_apis":   change.AffectedAPIs,
-			"published_date":  change.Date,
+			"change_type":    change.Type,
+			"affected_apis":  change.AffectedAPIs,
+			"published_date": change.Date,
 		}
 
 		items = append(items, item)

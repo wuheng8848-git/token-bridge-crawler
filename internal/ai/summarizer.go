@@ -52,16 +52,16 @@ func NewSummarizer(cfg Config) (*Summarizer, error) {
 
 // ReportData 报告数据
 type ReportData struct {
-	Vendor           string
-	Date             string
-	TotalModels      int
-	NewModels        int
-	NewList          string
-	UpdatedModels    int
-	IncreasedModels  int
-	AvgIncreasePct   float64
-	DecreasedModels  int
-	AvgDecreasePct   float64
+	Vendor          string
+	Date            string
+	TotalModels     int
+	NewModels       int
+	NewList         string
+	UpdatedModels   int
+	IncreasedModels int
+	AvgIncreasePct  float64
+	DecreasedModels int
+	AvgDecreasePct  float64
 }
 
 // GenerateReport 生成日报

@@ -49,7 +49,7 @@ func main() {
 	if databaseURL == "" {
 		log.Fatal("数据库 URL 未配置，请设置 CRAWLER_DATABASE_URL 环境变量或在 config.yaml 中配置")
 	}
-	
+
 	store, err := storage.NewPostgresStorage(databaseURL)
 	if err != nil {
 		log.Fatalf("连接数据库失败: %v", err)
@@ -58,7 +58,7 @@ func main() {
 
 	// 创建厂商适配器
 	var vendorAdapters []adapters.VendorAdapter
-	
+
 	if cfg.Vendors.Google.Enabled {
 		vendorAdapters = append(vendorAdapters, adapters.NewGoogleAdapter())
 	}
@@ -144,7 +144,7 @@ func main() {
 
 	// 启动定时任务
 	c := cron.New(cron.WithLocation(time.UTC))
-	
+
 	_, err = c.AddFunc(cfg.Scheduler.Cron, func() {
 		log.Println("[Cron] 触发定时抓取任务")
 		if err := scheduler.RunDaily(context.Background()); err != nil {
@@ -172,7 +172,7 @@ type Config struct {
 	Scheduler struct {
 		Cron string `mapstructure:"cron"`
 	} `mapstructure:"scheduler"`
-	
+
 	Vendors struct {
 		Google struct {
 			Enabled bool   `mapstructure:"enabled"`
@@ -186,14 +186,14 @@ type Config struct {
 			Enabled bool `mapstructure:"enabled"`
 		} `mapstructure:"anthropic"`
 	} `mapstructure:"vendors"`
-	
+
 	Storage struct {
 		DatabaseURL string `mapstructure:"database_url"`
 	} `mapstructure:"storage"`
-	
+
 	AIReport struct {
-		Enabled      bool `mapstructure:"enabled"`
-		Provider     struct {
+		Enabled  bool `mapstructure:"enabled"`
+		Provider struct {
 			Name    string `mapstructure:"name"`
 			Model   string `mapstructure:"model"`
 			APIKey  string `mapstructure:"api_key"`
@@ -201,7 +201,7 @@ type Config struct {
 		} `mapstructure:"provider"`
 		PromptTemplate string `mapstructure:"prompt_template"`
 	} `mapstructure:"ai_report"`
-	
+
 	Email struct {
 		Enabled bool `mapstructure:"enabled"`
 		SMTP    struct {

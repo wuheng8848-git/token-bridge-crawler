@@ -10,7 +10,7 @@ import (
 )
 
 // ToolFragmentationDetector 工具碎片化信号检测器
-type ToolFragmentationDetector struct {}
+type ToolFragmentationDetector struct{}
 
 // NewToolFragmentationDetector 创建工具碎片化信号检测器
 func NewToolFragmentationDetector() *ToolFragmentationDetector {
@@ -86,21 +86,21 @@ func (d *ToolFragmentationDetector) DetectFromIntel(item core.IntelItem) ([]type
 		}
 
 		signal := types.CustomerSignal{
-			ID:        generateSignalID(),
-			Type:      types.SignalTypeToolFragmentation,
-			Strength:  strength,
-			Content:   item.Title,
-			Platform:  platform,
-			Author:    author,
-			URL:       item.URL,
+			ID:       generateSignalID(),
+			Type:     types.SignalTypeToolFragmentation,
+			Strength: strength,
+			Content:  item.Title,
+			Platform: platform,
+			Author:   author,
+			URL:      item.URL,
 			Metadata: map[string]interface{}{
-				"found_tools":                foundTools,
+				"found_tools":                  foundTools,
 				"found_fragmentation_keywords": foundFragmentationKeywords,
-				"intel_type":                 item.IntelType,
-				"source":                     item.Source,
+				"intel_type":                   item.IntelType,
+				"source":                       item.Source,
 			},
-			DetectedAt:    time.Now().UTC(),
-			RelatedIntel:  item.ID,
+			DetectedAt:   time.Now().UTC(),
+			RelatedIntel: item.ID,
 		}
 
 		signals = append(signals, signal)

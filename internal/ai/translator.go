@@ -167,8 +167,8 @@ func (t *OpenRouterTranslator) callOpenRouter(prompt string) (string, error) {
 
 // YoudaoTranslator 使用有道翻译API的翻译器
 type YoudaoTranslator struct {
-	appKey    string
-	appSecret string
+	appKey     string
+	appSecret  string
 	httpClient *http.Client
 }
 
@@ -232,9 +232,9 @@ func (t *YoudaoTranslator) callYoudaoAPI(text, from, to string) (string, error) 
 
 	// 构建请求参数
 	reqBody := map[string]string{
-		"q":     text,
-		"from":  from,
-		"to":    to,
+		"q":      text,
+		"from":   from,
+		"to":     to,
 		"appKey": t.appKey,
 		"salt":   fmt.Sprintf("%d", time.Now().Unix()),
 	}
@@ -304,8 +304,8 @@ func NewBaiduLLMTranslator(appID, apiKey string) *BaiduLLMTranslator {
 		apiKey = os.Getenv("BAIDU_API_KEY")
 	}
 	return &BaiduLLMTranslator{
-		appID:   appID,
-		apiKey:  apiKey,
+		appID:  appID,
+		apiKey: apiKey,
 		httpClient: &http.Client{
 			Timeout: 30 * time.Second,
 		},
@@ -566,7 +566,7 @@ func (t *BaiduClassicTranslator) callClassicAPI(text, from, to string) (string, 
 }
 
 // FallbackTranslator 备用翻译器（当所有API都失败时使用）
-type FallbackTranslator struct {}
+type FallbackTranslator struct{}
 
 // NewFallbackTranslator 创建备用翻译器
 func NewFallbackTranslator() *FallbackTranslator {

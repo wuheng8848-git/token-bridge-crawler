@@ -178,17 +178,17 @@ func (c *EcosystemCollector) fetchGitHubStats(ctx context.Context, tool ToolInfo
 
 	// 设置元数据
 	item.Metadata = core.Metadata{
-		"tool_name":         tool.Name,
-		"category":          tool.Category,
-		"stars":             repoData.Stars,
-		"forks":             repoData.Forks,
-		"open_issues":       repoData.OpenIssues,
-		"language":          repoData.Language,
-		"growth_rate":       growthRate,
-		"user_base":         repoData.Stars, // 用stars作为用户基数估算
-		"integration_apis":  tool.IntegrationAPIs,
-		"openness_level":    tool.OpennessLevel,
-		"website":           tool.Website,
+		"tool_name":        tool.Name,
+		"category":         tool.Category,
+		"stars":            repoData.Stars,
+		"forks":            repoData.Forks,
+		"open_issues":      repoData.OpenIssues,
+		"language":         repoData.Language,
+		"growth_rate":      growthRate,
+		"user_base":        repoData.Stars, // 用stars作为用户基数估算
+		"integration_apis": tool.IntegrationAPIs,
+		"openness_level":   tool.OpennessLevel,
+		"website":          tool.Website,
 	}
 
 	item.PublishedAt = &repoData.UpdatedAt
