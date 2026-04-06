@@ -63,6 +63,11 @@ interface DashboardData {
     translated: number
   } | null
   qualityData: QualityData | null
+  signals: {
+    total: number
+    byType: Record<string, number>
+    highValue: number  // migration + competitor
+  } | null
 }
 
 export function Dashboard() {
@@ -72,6 +77,7 @@ export function Dashboard() {
     stats: null,
     translationStats: null,
     qualityData: null,
+    signals: null,
   })
   const [loading, setLoading] = useState(true)
 
@@ -94,12 +100,38 @@ export function Dashboard() {
         const qualityRes = await fetch('/api/v1/stats/quality?limit=100')
         const qualityData = await qualityRes.json()
 
+        // 获取信号统计（从情报数据中计算）
+        // 获取最近5000条情报用于信号统计
+        const signalsRes = await fetch('/api/v1/intelligence?limit=5000&offset=0')
+        const signalsData = await signalsRes.json()
+        const signalItems = signalsData.items || []
+
+        // 计算信号分布
+        const signalByType: Record<string, number> = {}
+        let highValueCount = 0
+
+        signalItems.forEach((item: any) => {
+          const signalType = item.metadata?.signal_type || item.signal_type
+          if (signalType) {
+            signalByType[signalType] = (signalByType[signalType] || 0) + 1
+            // 高价值信号：migration + competitor
+            if (signalType === 'migration' || signalType === 'competitor') {
+              highValueCount++
+            }
+          }
+        })
+
         setData({
           collectors: collectorsData.items || [],
           collectorStats: collectorStatsData.collectors || [],
           stats: statsData,
           translationStats: collectorStatsData.translationStats || null,
           qualityData: qualityData || null,
+          signals: {
+            total: Object.values(signalByType).reduce((a, b) => a + b, 0),
+            byType: signalByType,
+            highValue: highValueCount,
+          },
         })
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error)
@@ -138,16 +170,18 @@ export function Dashboard() {
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <KPICard
-            title="采集运行次数"
-            value={data.stats?.collectorRuns?.toString() || '—'}
+            title="高价值信号"
+            value={data.signals?.highValue?.toString() || '—'}
+            color="warning"
             loading={loading}
+            subtitle="迁移意愿+竞品动态"
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <KPICard
-            title="系统状态"
-            value="运行中"
-            color="success"
+            title="信号总数"
+            value={data.signals?.total?.toString() || '—'}
+            color="primary"
             loading={loading}
           />
         </Grid>
@@ -253,7 +287,7 @@ export function Dashboard() {
                 />
               </Box>
               <Typography variant="body2" color="text.secondary">
-                {data.translationStats.translated.toLocaleString()} / {data.translationStats.total.toLocaleString()} 
+                {data.translationStats.translated.toLocaleString()} / {data.translationStats.total.toLocaleString()}
                 {' '}({((data.translationStats.translated / data.translationStats.total) * 100).toFixed(1)}%)
               </Typography>
             </Box>
@@ -292,7 +326,7 @@ export function Dashboard() {
                 </CardContent>
               </Card>
             </Grid>
-            
+
             {/* 热门关键词 */}
             <Grid item xs={12} md={4}>
               <Card sx={{ height: '100%' }}>
@@ -314,7 +348,7 @@ export function Dashboard() {
                 </CardContent>
               </Card>
             </Grid>
-            
+
             {/* 主题分布 */}
             <Grid item xs={12} md={4}>
               <Card sx={{ height: '100%' }}>
@@ -407,6 +441,43 @@ export function Dashboard() {
                 </Card>
               </Grid>
             ))}
+          </Grid>
+        </>
+      )}
+
+      {/* 信号类型分布 */}
+      {data.signals && data.signals.total > 0 && (
+        <>
+          <Typography variant="h6" gutterBottom sx={{ mt: 4, fontWeight: 600 }}>
+            信号类型分布
+          </Typography>
+          <Grid container spacing={2}>
+            {Object.entries(data.signals.byType)
+              .sort(([, a], [, b]) => b - a)
+              .map(([type, count]) => {
+                const isHighValue = type === 'migration' || type === 'competitor'
+                return (
+                  <Grid item xs={12} sm={6} md={3} key={type}>
+                    <Card sx={{ bgcolor: isHighValue ? 'warning.light' : 'background.paper' }}>
+                      <CardContent>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <Box>
+                            <Typography variant="body2" color="text.secondary">
+                              {type}
+                              {isHighValue && (
+                                <Chip label="高价值" size="small" color="warning" sx={{ ml: 1 }} />
+                              )}
+                            </Typography>
+                            <Typography variant="h4" sx={{ fontWeight: 700, color: isHighValue ? 'warning.dark' : 'primary.main' }}>
+                              {count}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                )
+              })}
           </Grid>
         </>
       )}

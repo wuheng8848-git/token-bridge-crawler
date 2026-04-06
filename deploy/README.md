@@ -32,7 +32,148 @@
 
 ---
 
-## 2. 安装 Docker
+## 2. 数据库配置说明
+
+### 2.1 生产环境（独立容器）
+
+生产环境使用独立的 PostgreSQL 容器：
+
+```yaml
+# deploy/docker-compose.yml
+services:
+  postgres:
+    container_name: tb-intelligence-db
+    ports:
+      - "127.0.0.1:5432:5432"
+```
+
+### 2.2 开发环境（共用 v2 容器）
+
+**开发环境为了简化管理，共用 token-bridge-v2 项目的 PostgreSQL 容器**：
+
+```
+tb-dev-postgres (localhost:15432)
+  ├── token_bridge_v2        ← v2 主项目的数据
+  └── token_bridge_crawler   ← 情报系统的数据（独立数据库）
+```
+
+**配置方式**：
+```env
+# .env 文件
+CRAWLER_DATABASE_URL=postgres://tbv2:tbv2_password@localhost:15432/token_bridge_crawler?sslmode=disable
+```
+
+**为什么共用**：
+- ✅ 减少容器数量，简化管理
+- ✅ 节省内存资源
+- ✅ 开发环境够用，数据完全隔离（不同数据库）
+- ✅ TBv2 连接 crawler 数据库方便（同容器网络）
+
+**注意事项**：
+- ⚠️ 如果 v2 容器停止，情报系统也无法运行
+- ⚠️ 不要误操作删除 `token_bridge_crawler` 数据库
+- ⚠️ 生产环境必须使用独立容器（`tb-intelligence-db`）
+
+**数据隔离保证**：
+- 不同数据库，表结构完全独立
+- crawler 有 9 个专用表，与 v2 不冲突
+- 当前数据量：~6195 条情报记录
+
+---
+
+## 2.3 与 TBv2 的对接架构
+
+### 对接带 1：目录导入带（HTTP，crawler → TBv2）
+
+**方向**：crawler 推送价格/目录数据到 TBv2
+
+```
+crawler → HTTP POST → TBv2 API → supplier_catalog_staging → 运营审核
+```
+
+**关键配置**：
+```env
+# TBv2 API 地址（注意：不是前端端口！）
+TB_BASE_URL=http://127.0.0.1:8080
+
+# 管理员 Token（仅放行特定路径）
+TB_ADMIN_API_TOKEN=local-dev-staging-bearer-2026-03-31
+```
+
+**放行路径**：
+- `POST /v1/admin/supplier_catalog_staging/import`（Bearer Token 认证）
+- 其他路径拒绝访问
+
+**⚠️ 防误配提示**：
+- `TB_BASE_URL` 指向 **TBv2 API 服务**，不要写成前端端口（5173/3000/3001）
+- TBv2 API 默认端口：`8080`
+- 前端端口：Admin `5173`、Console `3001`（这些是 Vite 开发服务器）
+
+### 对接带 2：情报聚合带（DB，TBv2 → crawler）
+
+**方向**：TBv2 读取 crawler 数据库，聚合生成情报总览
+
+```
+crawler DB (token_bridge_crawler)
+  ↓ TBv2 通过 CRAWLER_DATABASE_URL 连接
+  ↓ 执行 sync_intelligence_overview 聚合命令
+TBv2 DB (token_bridge_v2)
+  ↓ 写入 intelligence_summaries 表
+  ↓ Admin 情报页读取
+Admin 情报系统页面
+```
+
+**关键配置**：
+```env
+# crawler 数据库连接（TBv2 使用此 URL 读取情报数据）
+CRAWLER_DATABASE_URL=postgres://tbv2:tbv2_password@localhost:15432/token_bridge_crawler?sslmode=disable
+```
+
+**聚合流程**：
+1. TBv2 连接 `token_bridge_crawler` 数据库
+2. 读取 `intelligence_items`、`collector_runs` 等表
+3. 执行 `sync_intelligence_overview` 聚合命令
+4. 写入 TBv2 主库的 `intelligence_summaries` 表
+5. Admin 前端从 TBv2 API 读取聚合后的数据
+
+---
+
+## 2.4 端口配置注意事项
+
+### API 端口规范
+
+| 服务 | 默认端口 | 说明 |
+|------|---------|------|
+| **TBv2 API** | `8080` | 主项目 API 服务 |
+| **Crawler API** | `8081` | 情报系统 API（故意避让 8080） |
+| TBv2 Admin 前端 | `5173` | Vite 开发服务器 |
+| TBv2 Console 前端 | `3001` | Vite 开发服务器 |
+
+### ⚠️ 重要提示
+
+1. **以实际监听为准**：不同环境可能配置不同端口，检查日志确认：
+   ```
+   [API] 启动 HTTP 服务: http://localhost:8081
+   ```
+
+2. **保持口径一致**：
+   - Docker Compose 健康检查端口必须与实际端口一致
+   - API 代理配置必须指向正确端口
+   - 文档中的示例端口需标注"默认值"
+
+3. **不要占用 TBv2 8080**：
+   - Crawler API 默认使用 `8081`
+   - 如果修改 `API_PORT`，确保不与 TBv2 冲突
+
+4. **开发环境前端代理**：
+   ```typescript
+   // console/vite.config.ts
+   const apiTarget = 'http://localhost:8081'  // 指向 crawler API
+   ```
+
+---
+
+## 3. 安装 Docker
 
 ```bash
 # 更新系统
@@ -52,9 +193,9 @@ docker-compose --version
 
 ---
 
-## 3. 部署步骤
+## 4. 部署步骤
 
-### 3.1 上传代码
+### 4.1 上传代码
 
 ```bash
 # 在云服务器上创建目录
@@ -68,7 +209,7 @@ scp -r /path/to/token-bridge-crawler root@your-server-ip:/opt/
 git clone <your-repo-url> .
 ```
 
-### 3.2 配置环境变量
+### 4.2 配置环境变量
 
 ```bash
 cd /opt/token-bridge-crawler/deploy
@@ -92,7 +233,7 @@ TAVILY_API_KEY=tvly-dev-xxxxxxxxxxxx
 # 其他配置可以先不填，系统会跳过相关功能
 ```
 
-### 3.3 启动服务
+### 4.3 启动服务
 
 ```bash
 # 进入部署目录
@@ -113,9 +254,9 @@ docker-compose logs -f intelligence
 
 ---
 
-## 4. 验证部署
+## 5. 验证部署
 
-### 4.1 检查服务状态
+### 5.1 检查服务状态
 
 ```bash
 # 查看容器状态
@@ -127,7 +268,7 @@ docker-compose ps
 # tb-intelligence-db     Up 2 minutes
 ```
 
-### 4.2 测试 API
+### 5.2 测试 API
 
 ```bash
 # 健康检查
@@ -149,7 +290,7 @@ curl http://localhost:8081/api/v1/stats/signals
 curl http://localhost:8081/api/v1/collector-runs
 ```
 
-### 4.3 查看日志
+### 5.3 查看日志
 
 ```bash
 # 实时查看情报系统日志
@@ -161,7 +302,7 @@ docker-compose logs --tail=100 intelligence
 
 ---
 
-## 5. 配置定时采集
+## 6. 配置定时采集
 
 编辑 `config.yaml` 配置采集频率:
 
@@ -208,7 +349,7 @@ docker-compose restart intelligence
 
 ---
 
-## 6. 日常运维
+## 7. 日常运维
 
 ### 6.1 查看运行状态
 
@@ -265,7 +406,7 @@ docker-compose down -v
 
 ---
 
-## 7. 故障排查
+## 8. 故障排查
 
 ### 问题1: 容器启动失败
 
@@ -317,7 +458,7 @@ sudo swapon /swapfile
 
 ---
 
-## 8. 安全建议
+## 9. 安全建议
 
 ### 8.1 防火墙配置
 

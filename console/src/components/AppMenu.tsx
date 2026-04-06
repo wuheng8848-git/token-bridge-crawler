@@ -29,7 +29,7 @@ const MENU_ITEMS = [
   { id: 'dashboard', label: '监控大盘', icon: DashboardIcon },
   { id: 'collectors', label: '采集器管理', icon: MemoryIcon },
   { id: 'intelligence', label: '情报浏览', icon: ArticleIcon },
-  { id: 'signals', label: '信号调试', icon: BugReportIcon },
+  { id: 'signals', label: '营销信号调试（未启用）', icon: BugReportIcon },
   { id: 'translation', label: '翻译服务', icon: TranslateIcon },
   { id: 'settings', label: '系统配置', icon: SettingsIcon },
 ]

@@ -80,8 +80,9 @@ func (e *Engine) Evaluate(item core.IntelItem) RuleResult {
 			result.NoiseScore += rule.Weight
 			result.MatchedRules = append(result.MatchedRules, rule.RuleName)
 
-			// 如果是信号（负权重），记录信号类型
-			if rule.Weight < 0 && signalType != "" {
+			// 如果是信号（负权重），且还没有设置信号类型，则设置
+			// 优先级：第一个匹配的信号规则决定信号类型
+			if rule.Weight < 0 && signalType != "" && result.SignalType == string(SignalTypeNoise) {
 				result.SignalType = signalType
 			}
 		}

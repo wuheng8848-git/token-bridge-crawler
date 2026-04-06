@@ -64,28 +64,33 @@ type SearchQuery struct {
 	Priority int    `json:"priority"` // 优先级
 }
 
-// 默认搜索词 - 针对迁移意愿等用户痛点
+// 优化后的搜索词 - 基于 Tavily 最佳实践
+// 参考: https://docs.tavily.com/documentation/best-practices/best-practices-search
+// 关键原则:
+// 1. 查询保持在 400 字符以内
+// 2. 复杂查询拆分为子查询
+// 3. 使用 max_results=5 (默认值) 避免低质量结果
+// 4. 使用 time_range 过滤最新内容
+// 5. 使用 include_domains/exclude_domains 提高质量
 var defaultSearchQueries = []SearchQuery{
-	// 成本压力
-	{Query: "OpenAI API pricing expensive complaints 2024", Category: "cost", Priority: 1},
-	{Query: "LLM API cost too high alternative cheaper", Category: "cost", Priority: 1},
-	{Query: "ChatGPT API billing issues frustration", Category: "cost", Priority: 2},
+	// ========== 迁移意愿（最高优先级 - 直接发现客户） ==========
+	{Query: "switching from OpenAI to Claude migration experience", Category: "migration", Priority: 1},
+	{Query: "best OpenAI API alternative 2025", Category: "migration", Priority: 1},
+	{Query: "moving from OpenAI to Anthropic developer experience", Category: "migration", Priority: 1},
+	{Query: "OpenAI vs Claude API comparison switch", Category: "migration", Priority: 1},
 
-	// 迁移意愿 - 这些是关键！
-	{Query: "switching from OpenAI to Claude API experience", Category: "migration", Priority: 1},
-	{Query: "best alternative to OpenAI API 2024", Category: "migration", Priority: 1},
-	{Query: "migrating from OpenAI to Anthropic Claude", Category: "migration", Priority: 1},
-	{Query: "OpenAI vs Claude API comparison switching", Category: "migration", Priority: 2},
-	{Query: "looking for OpenAI alternative cheaper better", Category: "migration", Priority: 1},
-	{Query: "move from OpenAI to Gemini Claude experience", Category: "migration", Priority: 2},
+	// ========== 成本压力（高价值 - 价格敏感客户） ==========
+	{Query: "OpenAI API too expensive cost complaint", Category: "cost", Priority: 1},
+	{Query: "LLM API cost reduction cheaper alternative", Category: "cost", Priority: 1},
+	{Query: "OpenAI pricing increase frustration", Category: "cost", Priority: 2},
 
-	// 速率限制
-	{Query: "OpenAI API rate limit 429 error frustration", Category: "rate_limit", Priority: 1},
-	{Query: "OpenAI too many requests limit increase", Category: "rate_limit", Priority: 2},
+	// ========== 速率限制（技术痛点 - 需要解决方案） ==========
+	{Query: "OpenAI API rate limit 429 error solution", Category: "rate_limit", Priority: 1},
+	{Query: "OpenAI rate limiting too restrictive workaround", Category: "rate_limit", Priority: 2},
 
-	// 功能需求
-	{Query: "OpenAI API missing features wish list", Category: "feature", Priority: 2},
-	{Query: "ChatGPT API limitations problems", Category: "feature", Priority: 2},
+	// ========== 功能需求（产品改进机会） ==========
+	{Query: "OpenAI API limitations missing features", Category: "feature", Priority: 2},
+	{Query: "ChatGPT API problems issues wishlist", Category: "feature", Priority: 2},
 }
 
 // NewTavilyCollector 创建Tavily采集器
@@ -159,12 +164,16 @@ func (c *TavilyCollector) Fetch(ctx context.Context) ([]core.IntelItem, error) {
 
 // search 执行单个搜索
 func (c *TavilyCollector) search(ctx context.Context, query SearchQuery) ([]core.IntelItem, error) {
+	// 根据 Tavily 最佳实践优化参数
+	// 参考: https://docs.tavily.com/documentation/best-practices/best-practices-search
 	reqBody := TavilySearchRequest{
 		Query:             query.Query,
-		SearchDepth:       "advanced",
-		MaxResults:        10,
-		IncludeRawContent: true,
-		Days:              30, // 最近30天
+		SearchDepth:       "basic", // basic = 高质量，1 credit（advanced 太贵，2 credits）
+		MaxResults:        5,       // Tavily 官方建议：默认5，太高会降低质量
+		IncludeRawContent: false,   // 关闭原始内容，节省带宽和处理时间
+		Days:              30,      // 最近30天（保持时效性）
+		// 可选：include_domains/exclude_domains 用于提高质量
+		// 例如：排除低质量站点，专注技术社区
 	}
 
 	body, err := json.Marshal(reqBody)

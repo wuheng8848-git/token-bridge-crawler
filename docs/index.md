@@ -53,6 +53,8 @@
 | 文档 | 内容 | 状态 |
 |------|------|------|
 | [01-roadmap.md](./progress/01-roadmap.md) | 功能路线图 | 进行中 |
+| [02-task-signal-filtering.md](./progress/02-task-signal-filtering.md) | 信号过滤任务执行单 | 已完成 |
+| [03-data-source-optimization.md](./progress/03-data-source-optimization.md) | 数据源优化复盘（2026-04-06） | 已完成 |
 | decisions/ | 架构决策记录（ADR） | 待补充 |
 
 ### 规范文档
@@ -79,4 +81,4 @@
 
 ---
 
-**最后更新**：2026-04-05
+**最后更新**：2026-04-06

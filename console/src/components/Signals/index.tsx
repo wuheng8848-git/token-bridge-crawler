@@ -63,12 +63,12 @@ export function Signals() {
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const [total, setTotal] = useState(0)
-  
+
   // 筛选条件
   const [filterType, setFilterType] = useState('')
   const [filterStrength, setFilterStrength] = useState<number | ''>('')
   const [filterStatus, setFilterStatus] = useState('')
-  
+
   // 详情弹窗
   const [selectedSignal, setSelectedSignal] = useState<Signal | null>(null)
   // 阈值调整弹窗
@@ -89,10 +89,10 @@ export function Signals() {
         ...(filterStrength && { strength: String(filterStrength) }),
         ...(filterStatus && { status: filterStatus }),
       })
-      
+
       const res = await fetch(`/api/v1/signals?${params}`)
       const data = await res.json()
-      
+
       setSignals(data.items || [])
       setTotal(data.total || 0)
     } catch (error) {
@@ -141,7 +141,13 @@ export function Signals() {
   return (
     <Box>
       <Typography variant="h4" gutterBottom sx={{ fontWeight: 700 }}>
-        信号调试
+        营销信号调试
+        <Chip
+          label="未启用"
+          size="small"
+          color="default"
+          sx={{ ml: 2 }}
+        />
       </Typography>
 
       {/* 统计卡片 */}

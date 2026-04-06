@@ -493,20 +493,20 @@ func registerUserPainCollectors(registry *core.CollectorRegistry, config *Config
 	registry.Register(redditCollector)
 	log.Println("[Registry] 注册 Reddit 用户痛点采集器")
 
-	// StackExchange 用户痛点采集器（免费 API，无需 Key）
-	stackexchangeCollector := userpain.NewStackExchangeCollector()
-	registry.Register(stackexchangeCollector)
-	log.Println("[Registry] 注册 StackExchange 用户痛点采集器")
+	// StackExchange 用户痛点采集器 - 已停用（数据质量差，标题为空）
+	// stackexchangeCollector := userpain.NewStackExchangeCollector()
+	// registry.Register(stackexchangeCollector)
+	// log.Println("[Registry] 注册 StackExchange 用户痛点采集器")
 
-	// OpenAI 社区论坛采集器（公开数据，无需 Key）
-	openaiCommunityCollector := userpain.NewOpenAICommunityCollector()
-	registry.Register(openaiCommunityCollector)
-	log.Println("[Registry] 注册 OpenAI 社区论坛采集器")
+	// OpenAI 社区论坛采集器 - 已停用（数据质量差）
+	// openaiCommunityCollector := userpain.NewOpenAICommunityCollector()
+	// registry.Register(openaiCommunityCollector)
+	// log.Println("[Registry] 注册 OpenAI 社区论坛采集器")
 
-	// Dev.to 采集器（免费 API，无需 Key）
-	devtoCollector := userpain.NewDevToCollector()
-	registry.Register(devtoCollector)
-	log.Println("[Registry] 注册 Dev.to 用户痛点采集器")
+	// Dev.to 采集器 - 已停用（待优化）
+	// devtoCollector := userpain.NewDevToCollector()
+	// registry.Register(devtoCollector)
+	// log.Println("[Registry] 注册 Dev.to 用户痛点采集器")
 
 	// 配置痛点采集器
 	configPainCollector := userpain.NewConfigPainCollector()
